@@ -1,123 +1,61 @@
-
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cek Aset Mini</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-  h2 { color: #333; }
-  .search-container { position: relative; display: inline-block; margin-bottom: 20px; }
-  input[type=text] { width: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-  button { padding: 10px 14px; margin-left: 5px; cursor: pointer; border: none; border-radius: 4px; background: #4CAF50; color: #fff; font-size: 16px; }
-  button:hover { background: #45a049; }
-  .autocomplete-suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; position: absolute; background: #fff; z-index: 1000; width: 300px; border-radius: 4px; }
-  .autocomplete-suggestion { padding: 6px 10px; cursor: pointer; }
-  .autocomplete-suggestion:hover { background-color: #f0f0f0; }
-  .result { margin-top: 20px; max-width: 650px; }
-  .card { background: #fff; border-radius: 6px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 6px 8px; vertical-align: top; }
-  td.label { font-weight: bold; width: 150px; color: #555; }
-  tr:hover { background-color: #f0f8ff; }
-  .keterangan { max-height: 150px; overflow-y: auto; padding-top: 4px; white-space: pre-line; color: #333; }
+body{font-family:sans-serif;margin:20px}
+input[type=text]{width:300px;padding:5px;margin-right:5px}
+button{padding:5px}
+.result{margin-top:20px}
+.result div{margin-bottom:5px}
 </style>
 </head>
 <body>
 <h2>Cek Aset Mini</h2>
-<div class="search-container">
-  <input type="text" id="kodeAset" placeholder="Masukkan Kode Aset">
-  <button id="btnCari">🔍</button>
-  <div id="autocomplete-list" class="autocomplete-suggestions"></div>
-</div>
-
+<input type="text" id="kodeAset" placeholder="Masukkan kode aset">
+<button id="searchBtn">🔍</button>
 <div class="result" id="result"></div>
 
 <script>
-const SPREADSHEET_ID = "1u-gbTU-RAnGNc_Yl21PNJPsKRJ-b_ahrY5_2FGHsMAE";
-const SHEET_NAME = "Sheet5";
-const SPREADSHEET_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
-
+// URL CSV Sheet5 publik Anda
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQn-KkQwz6A6Pp-FakeURL/pub?output=csv"; 
 let data = [];
 
-fetch(SPREADSHEET_URL)
-  .then(res => res.text())
-  .then(txt => {
-    const json = JSON.parse(txt.match(/(?<=google\.visualization\.Query\.setResponse\().*(?=\);)/s)[0]);
-    const cols = json.table.cols.map(c => c.label);
-    data = json.table.rows.map(r => r.c.map((cell,i) => ({label: cols[i], value: cell ? cell.v : ""})));
-  });
-
-const input = document.getElementById("kodeAset");
-const btn = document.getElementById("btnCari");
-const resultDiv = document.getElementById("result");
-const autocompleteList = document.getElementById("autocomplete-list");
-
-function tampilkanHasil(row) {
-  if (!row) {
-    resultDiv.innerHTML = "<p>Data tidak ditemukan.</p>";
-    return;
-  }
-  const getValue = (colLabel, fallbackLabel) => {
-    const val = row.find(c=>c.label===colLabel)?.value;
-    if ((val===""||val===null) && fallbackLabel) return row.find(c=>c.label===fallbackLabel)?.value||"";
-    return val||"";
-  };
-
-  const keterangan = getValue("Q","U");
-  const cardHTML = `
-    <div class="card">
-      <table>
-        <tr><td class="label">Kode Aset</td><td>${getValue("E")}</td></tr>
-        <tr><td class="label">Deskripsi</td><td>${getValue("F")}</td></tr>
-        <tr><td class="label">Kapitalisasi</td><td>${getValue("G")}</td></tr>
-        <tr><td class="label">Nilai Perolehan</td><td>${getValue("T")}</td></tr>
-        <tr><td class="label">Lokasi</td><td>${getValue("N")}</td></tr>
-        <tr><td class="label">Detail Lokasi</td><td>${getValue("O")}</td></tr>
-        <tr><td class="label">Kondisi</td><td>${getValue("P")}</td></tr>
-        <tr><td class="label">Opname Terakhir</td><td>${getValue("K","J")}</td></tr>
-        <tr><td colspan="2"><div class="keterangan">${keterangan}</div></td></tr>
-      </table>
-    </div>
-  `;
-  resultDiv.innerHTML = cardHTML;
-}
-
-function cariKodeAset() {
-  let kode = input.value.trim();
-  if (/^\d{8}$/.test(kode)) kode += "-0";
-  const row = data.find(r => {
-    const kodeRow = r.find(c=>c.label==="E")?.value;
-    return kodeRow===kode || (kodeRow===kode.replace("-0","") && kode.endsWith("-0"));
-  });
-  tampilkanHasil(row);
-}
-
-btn.addEventListener("click", cariKodeAset);
-input.addEventListener("keydown", e => { if(e.key==="Enter") cariKodeAset(); });
-
-input.addEventListener("input", () => {
-  const val = input.value.trim();
-  autocompleteList.innerHTML = "";
-  if (!val) return;
-  const suggestions = data
-    .map(r=>r.find(c=>c.label==="E")?.value)
-    .filter(k=>k && k.startsWith(val))
-    .slice(0,10);
-  suggestions.forEach(s=>{
-    const div = document.createElement("div");
-    div.textContent = s;
-    div.classList.add("autocomplete-suggestion");
-    div.addEventListener("click", ()=>{
-      input.value = s;
-      autocompleteList.innerHTML = "";
-    });
-    autocompleteList.appendChild(div);
-  });
+Papa.parse(sheetUrl, {
+    download: true,
+    header: true,
+    complete: function(results) {
+        data = results.data.filter(r => r.E); // pastikan ada Kode Aset
+    }
 });
 
-document.addEventListener("click", e => { if(e.target!==input) autocompleteList.innerHTML=""; });
+function formatResult(row){
+    return `
+    <div><strong>Kode Aset:</strong> ${row.E}</div>
+    <div><strong>Deskripsi:</strong> ${row.F}</div>
+    <div><strong>Kapitalisasi:</strong> ${row.G}</div>
+    <div><strong>Nilai Perolehan:</strong> ${row.T}</div>
+    <div><strong>Lokasi:</strong> ${row.N}</div>
+    <div><strong>Detail Lokasi:</strong> ${row.O}</div>
+    <div><strong>Kondisi:</strong> ${row.P}</div>
+    <div><strong>Opname Terakhir:</strong> ${row.K || row.J}</div>
+    <div><strong>Keterangan:</strong> ${row.Q || row.U}</div>
+    `;
+}
+
+document.getElementById("searchBtn").addEventListener("click", function(){
+    let kode = document.getElementById("kodeAset").value.trim();
+    if(kode.length === 8 && !kode.includes("-")) kode += "-0";
+    const row = data.find(r => r.E === kode);
+    document.getElementById("result").innerHTML = row ? formatResult(row) : "Data tidak ditemukan";
+});
+
+document.getElementById("kodeAset").addEventListener("keypress", function(e){
+    if(e.key === "Enter") document.getElementById("searchBtn").click();
+});
 </script>
 </body>
 </html>
