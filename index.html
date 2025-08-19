@@ -18,19 +18,26 @@ body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial,
 
 .hint { font-size: 12px; color: #666; margin-top: 6px; }
 
-#marquee { width:100%; overflow:hidden; white-space:nowrap; color:#1a73e8; margin-top:10px; font-family: 'Roboto Condensed', Arial, sans-serif; font-weight:500; }
-
 button { margin-top:10px; padding:6px 12px; cursor:pointer; }
 
-/* Tema Light */
-body.light { background: url('kereta-watermark.png') center top no-repeat; background-size: contain; background-color: #f0f4f8; color: #333; }
-#output.light { background: rgba(255,255,255,0.85); color:#333; }
+/* Tema Light diperbaiki */
+body.light { 
+  background: url('kereta-watermark.png') center top no-repeat; 
+  background-size: contain; 
+  background-color: #f8fbff; 
+  color: #222; 
+}
+#output.light { background: rgba(255,255,255,0.95); color:#222; }
 #searchBox.light { background:#fff; color:#000; }
 
-/* Tema Dark */
-body.dark { background: #1a1a1a url('kereta-watermark.png') center top no-repeat; background-size: contain; color: #eee; }
-#output.dark { background: rgba(40,40,40,0.85); color:#eee; }
-#searchBox.dark { background:#333; color:#fff; }
+/* Tema Dark diperkuat */
+body.dark { 
+  background: #121212 url('kereta-watermark.png') center top no-repeat; 
+  background-size: contain; 
+  color: #eee; 
+}
+#output.dark { background: rgba(20,20,20,0.85); color:#eee; }
+#searchBox.dark { background:#222; color:#fff; }
 
 /* Floating Running Text */
 #marqueeFloating {
@@ -41,13 +48,13 @@ body.dark { background: #1a1a1a url('kereta-watermark.png') center top no-repeat
   overflow: hidden;
   white-space: nowrap;
   pointer-events: none;
-  background: rgba(255,255,255,0.3);
-  color: #1a73e8;
   font-family: 'Roboto Condensed', Arial, sans-serif;
   font-weight: 500;
   z-index: 9999;
   padding: 4px 0;
 }
+body.light #marqueeFloating { background: rgba(255,255,255,0.3); color: #1a73e8; }
+body.dark #marqueeFloating { background: rgba(0,0,0,0.3); color: #1a73e8; }
 </style>
 </head>
 <body>
@@ -141,7 +148,7 @@ function searchAsset(){
   if(found){
     const box=document.getElementById("output");
     box.style.backgroundColor="#fffbcc";
-    setTimeout(()=>{ box.style.backgroundColor=document.body.className==='light'?"rgba(255,255,255,0.85)":"rgba(40,40,40,0.85)"; },500);
+    setTimeout(()=>{ box.style.backgroundColor=document.body.className==='light'?"rgba(255,255,255,0.95)":"rgba(20,20,20,0.85)"; },500);
   }
 }
 
