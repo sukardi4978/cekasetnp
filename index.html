@@ -1,170 +1,170 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Cek Aset Non Produksi PT INKA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
-  <!-- Google Fonts: Roboto Condensed + Roboto Mono -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto+Mono&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<title>Cek Aset Non Produksi PT INKA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    body { 
-      font-family: 'Roboto Condensed', Arial, sans-serif; 
-      margin: 20px; 
-      text-align: center; 
-    }
-    #searchBox { 
-      width: 320px; 
-      padding: 10px; 
-      font-size: 16px; 
-      font-family: 'Roboto Condensed', Arial, sans-serif;
-    }
-    #output {
-      margin-top: 20px;
-      text-align: left;
-      display: inline-block;
-      border: 1px solid #ccc;
-      padding: 12px;
-      background: #f9f9f9;
-      border-radius: 6px;
-    }
-    #output pre {
-      margin: 0;
-      font-size: 16px;
-      line-height: 1.2;
-      font-family: 'Roboto Mono', monospace;
-      white-space: pre-wrap;
-      color: #333;
-    }
-    .hint { font-size: 12px; color: #666; margin-top: 6px; }
-  </style>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto+Mono&display=swap" rel="stylesheet">
+
+<style>
+body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial, sans-serif; transition: background 0.3s, color 0.3s; }
+#searchBox { width: 320px; padding: 10px; font-size: 16px; font-family: 'Roboto Condensed', Arial, sans-serif; transition: all 0.2s ease; }
+#searchBox:focus { border: 2px solid #1a73e8; box-shadow: 0 0 6px rgba(26,115,232,0.4); outline: none; }
+
+#output { margin-top: 20px; text-align: left; display: inline-block; border: 1px solid #ccc; padding: 12px; border-radius:6px; transition: background 0.3s, color 0.3s; }
+#output pre { margin: 0; font-size: 16px; line-height: 1.2; font-family: 'Roboto Mono', monospace; white-space: pre-wrap; }
+
+.hint { font-size: 12px; color: #666; margin-top: 6px; }
+
+#marquee { width:100%; overflow:hidden; white-space:nowrap; color:#1a73e8; margin-top:10px; font-family: 'Roboto Condensed', Arial, sans-serif; font-weight:500; }
+
+button { margin-top:10px; padding:6px 12px; cursor:pointer; }
+
+/* Tema Light */
+body.light { background: url('kereta-watermark.png') center top no-repeat; background-size: contain; background-color: #f0f4f8; color: #333; }
+#output.light { background: rgba(255,255,255,0.85); color:#333; }
+#searchBox.light { background:#fff; color:#000; }
+
+/* Tema Dark */
+body.dark { background: #1a1a1a url('kereta-watermark.png') center top no-repeat; background-size: contain; color: #eee; }
+#output.dark { background: rgba(40,40,40,0.85); color:#eee; }
+#searchBox.dark { background:#333; color:#fff; }
+</style>
 </head>
 <body>
-  <h2>Cek Data Aset</h2>
-  <input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" />
-  <datalist id="assetList"></datalist>
-  <div class="hint">Tekan Enter untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
 
-  <div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
+<h2>Cek Data Aset</h2>
+<input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" />
+<datalist id="assetList"></datalist>
+<div class="hint">Tekan Enter untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
+<div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
+<div id="marquee"><span id="marqueeText">Memuat info...</span></div>
+<button id="themeToggle">Tema Gelap</button>
 
-  <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
+<script>
+// ====== ASET ======
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
+let assets = [];
+const searchBox = document.getElementById("searchBox");
 
-    let assets = [];
-    const searchBox = document.getElementById("searchBox");
-
-    function parseCSV(text) {
-      const lines = text.split(/\r?\n/);
-      return lines.map(line => {
-        const cells = [];
-        let cur = "", inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') {
-            if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; } 
-            else { inQuotes = !inQuotes; }
-          } else if (ch === ',' && !inQuotes) {
-            cells.push(cur); cur = "";
-          } else {
-            cur += ch;
-          }
-        }
-        cells.push(cur);
-        return cells.map(c => c.replace(/^"|"$/g, ""));
-      });
+function parseCSV(text){
+  const lines = text.split(/\r?\n/);
+  return lines.map(line=>{
+    const cells=[]; let cur="", inQuotes=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch=='"'){ if(inQuotes && line[i+1]=='"'){cur+='"';i++;} else{inQuotes=!inQuotes;} }
+      else if(ch==',' && !inQuotes){ cells.push(cur); cur=""; }
+      else{ cur+=ch; }
     }
+    cells.push(cur);
+    return cells.map(c=>c.replace(/^"|"$/g,""));
+  });
+}
 
-    async function loadSheet() {
-      const res = await fetch(sheetUrl);
-      const text = await res.text();
-      const rows = parseCSV(text);
+async function loadSheet(){
+  const res = await fetch(sheetUrl);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  assets = rows.map(r=>({
+    kode:(r[4]||"").trim(),
+    deskripsi:r[5]||"",
+    kapitalisasi:r[6]||"",
+    nilai:r[19]||"",
+    opname:r[10]||r[9]||"",
+    lokasi:r[13]||"",
+    detail:r[14]||"",
+    kondisi:r[15]||"",
+    catatan:(r[16]&&r[16].trim())?r[16]:(r[21]||"")
+  })).filter(a=>a.kode);
 
-      assets = rows.map(r => ({
-        kode: (r[4] || "").trim(),
-        deskripsi: r[5] || "",
-        kapitalisasi: r[6] || "",
-        nilai: r[19] || "",
-        opname: r[10] || r[9] || "",
-        lokasi: r[13] || "",
-        detail: r[14] || "",
-        kondisi: r[15] || "",
-        catatan: (r[16] && r[16].trim()) ? r[16] : (r[21] || "")
-      })).filter(a => a.kode);
+  const dataList = document.getElementById("assetList");
+  dataList.innerHTML="";
+  assets.map(a=>a.kode).sort((a,b)=>a.localeCompare(b)).slice(0,5000).forEach(k=>{
+    const opt=document.createElement("option"); opt.value=k; dataList.appendChild(opt);
+  });
+}
+loadSheet().catch(err=>{ document.querySelector("#output pre").textContent="Gagal memuat data: "+err; });
 
-      const dataList = document.getElementById("assetList");
-      dataList.innerHTML = "";
-      assets
-        .map(a => a.kode)
-        .sort((a,b) => a.localeCompare(b))
-        .slice(0, 5000)
-        .forEach(k => {
-          const opt = document.createElement("option");
-          opt.value = k;
-          dataList.appendChild(opt);
-        });
+function formatAsset(a){
+  let nilaiText=(a.nilai||"").trim();
+  if(!nilaiText) nilaiText="Rp. -";
+  else if(!nilaiText.startsWith("Rp.")) nilaiText="Rp. "+nilaiText;
+
+  const rows=[
+    ["Nomor Aset", a.kode],
+    ["Deskripsi", a.deskripsi],
+    ["Kapitalisasi", a.kapitalisasi],
+    ["Nilai Perolehan", nilaiText],
+    ["Lokasi", a.lokasi],
+    ["Detail Lokasi", a.detail],
+    ["Opname Terakhir", a.opname],
+    ["Kondisi", a.kondisi],
+    ["Catatan", a.catatan]
+  ];
+  const maxLabelLen=Math.max(...rows.map(([label])=>label.length));
+  return rows.map(([label,val])=>label.padEnd(maxLabelLen," ")+" : "+(val??"")).join("\n");
+}
+
+function searchAsset(){
+  const pre=document.querySelector("#output pre");
+  let kode=searchBox.value.trim();
+  if(!kode){ pre.textContent="Masukkan Nomor Aset terlebih dahulu."; return; }
+  if(/^\d{8}$/.test(kode)) kode+="-0";
+  else if(/^\d{8}-$/.test(kode)) kode+="0";
+
+  const found=assets.find(a=>a.kode===kode);
+  pre.textContent=found?formatAsset(found):"Data tidak ditemukan.";
+
+  // Highlight ringan
+  if(found){
+    const box=document.getElementById("output");
+    box.style.backgroundColor="#fffbcc";
+    setTimeout(()=>{ box.style.backgroundColor=document.body.className==='light'?"rgba(255,255,255,0.85)":"rgba(40,40,40,0.85)"; },500);
+  }
+}
+
+searchBox.addEventListener("keydown",e=>{ if(e.key==="Enter") searchAsset(); });
+searchBox.addEventListener("focus",function(){ setTimeout(()=>{this.select();},0); });
+
+// ====== RUNNING TEXT dari Sheet5 R1 ======
+const sheet5Url="https://docs.google.com/spreadsheets/d/e/.../pub?gid=XXXXX&single=true&output=csv"; // Ganti sesuai Sheet5
+async function loadMarquee(){
+  try{
+    const res=await fetch(sheet5Url);
+    const text=await res.text();
+    const rows=text.split(/\r?\n/).map(r=>r.split(','));
+    const r1=rows[0][17]||"";
+    const textEl=document.getElementById("marqueeText");
+    textEl.textContent=r1;
+
+    let offset=window.innerWidth;
+    function runMarquee(){
+      offset-=1;
+      textEl.style.transform=`translateX(${offset}px)`;
+      if(Math.abs(offset)>textEl.offsetWidth) offset=window.innerWidth;
+      requestAnimationFrame(runMarquee);
     }
+    runMarquee();
+  }catch(err){
+    document.getElementById("marqueeText").textContent="Gagal memuat info.";
+  }
+}
+loadMarquee();
 
-    function formatAsset(a) {
-      let nilaiText = (a.nilai || "").trim();
-      if (!nilaiText) {
-        nilaiText = "Rp. -";
-      } else if (!nilaiText.startsWith("Rp.")) {
-        nilaiText = "Rp. " + nilaiText;
-      }
+// ====== Toggle Tema ======
+const themeToggle=document.getElementById("themeToggle");
+function setTheme(theme){
+  document.body.className=theme;
+  document.getElementById("output").className=theme;
+  document.getElementById("searchBox").className=theme;
+  themeToggle.textContent=theme==='light'?'Tema Gelap':'Tema Terang';
+}
+setTheme('light'); // default
+themeToggle.addEventListener("click",()=>{ const current=document.body.className; setTheme(current==='light'?'dark':'light'); });
+</script>
 
-      const rows = [
-        ["Nomor Aset", a.kode],
-        ["Deskripsi", a.deskripsi],
-        ["Kapitalisasi", a.kapitalisasi],
-        ["Nilai Perolehan", nilaiText],
-        ["Lokasi", a.lokasi],
-        ["Detail Lokasi", a.detail],
-        ["Opname Terakhir", a.opname],
-        ["Kondisi", a.kondisi],
-        ["Catatan", a.catatan]
-      ];
-
-      const maxLabelLen = Math.max(...rows.map(([label]) => label.length));
-      return rows
-        .map(([label, val]) => label.padEnd(maxLabelLen, " ") + " : " + (val ?? ""))
-        .join("\n");
-    }
-
-    function searchAsset() {
-      const pre = document.querySelector("#output pre");
-      let kode = searchBox.value.trim();
-      if (!kode) { pre.textContent = "Masukkan Nomor Aset terlebih dahulu."; return; }
-
-      // Otomatis -0
-      if (/^\d{8}$/.test(kode)) {
-        kode += "-0";
-      } else if (/^\d{8}-$/.test(kode)) {
-        kode += "0";
-      }
-
-      const found = assets.find(a => a.kode === kode);
-      if (!found) {
-        pre.textContent = "Data tidak ditemukan.";
-        return;
-      }
-      pre.textContent = formatAsset(found);
-    }
-
-    // Enter untuk pencarian
-    searchBox.addEventListener("keydown", e => {
-      if (e.key === "Enter") searchAsset();
-    });
-
-    // Klik pertama: select all, klik kedua: tetap teks
-    searchBox.addEventListener("focus", function() {
-      setTimeout(() => { this.select(); }, 0);
-    });
-
-    // Muat data saat halaman dibuka
-    loadSheet().catch(err => {
-      document.querySelector("#output pre").textContent = "Gagal memuat data: " + err;
-    });
-  </script>
 </body>
 </html>
