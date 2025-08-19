@@ -46,7 +46,8 @@
     display: grid;
     grid-template-columns: 150px 10px auto; /* label : colon : data */
     line-height: 1;
-    margin-bottom: 0;
+    margin: 0;
+    padding: 0;
   }
   .result-label {
     text-align: left;
@@ -59,6 +60,9 @@
     text-align: left;
     line-height: 1;
     white-space: normal; /* wrap text panjang */
+  }
+  .result-data.keterangan {
+    grid-column: 1 / 4; /* full width */
   }
   .autocomplete-items {
     border: 1px solid #ccc;
@@ -91,8 +95,6 @@
     0% { text-indent: 100%; }
     100% { text-indent: -100%; }
   }
-
-  /* Responsif untuk HP */
   @media (max-width: 480px) {
     .result-row {
       grid-template-columns: 1fr 10px 2fr;
@@ -125,7 +127,6 @@
 
 <script>
 const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
-
 let assets = [];
 let runningText = "";
 
@@ -197,10 +198,9 @@ function searchAsset() {
     <div class="result-row"><div class="result-label">Detail Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.detail}</div></div>
     <div class="result-row"><div class="result-label">Opname Terakhir</div><div class="result-colon">:</div><div class="result-data">${asset.opname}</div></div>
     <div class="result-row"><div class="result-label">Kondisi</div><div class="result-colon">:</div><div class="result-data">${asset.kondisi}</div></div>
-    <!-- Keterangan full width tanpa label -->
+    <!-- Keterangan panjang langsung di bawah Kondisi, full-width -->
     <div class="result-row">
-      <div class="result-colon"></div>
-      <div class="result-data" style="grid-column:1 / 4; white-space: normal;">${asset.keterangan}</div>
+      <div class="result-data keterangan">${asset.keterangan}</div>
     </div>
   `;
   list.innerHTML = '';
