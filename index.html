@@ -13,7 +13,7 @@ body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial,
 #searchBox { width: 320px; padding: 10px; font-size: 16px; font-family: 'Roboto Condensed', Arial, sans-serif; transition: all 0.2s ease; }
 #searchBox:focus { border: 2px solid #1a73e8; box-shadow: 0 0 6px rgba(26,115,232,0.4); outline: none; }
 
-#output { margin-top: 60px; text-align: left; display: inline-block; border: 1px solid #ccc; padding: 12px; border-radius:6px; transition: color 0.3s; }
+#output { margin-top: 60px; text-align: left; display: inline-block; padding: 12px; border-radius:6px; transition: background 0.3s, color 0.3s, border 0.3s; }
 #output pre { margin: 0; font-size: 16px; line-height: 1.2; font-family: 'Roboto Mono', monospace; white-space: pre-wrap; }
 
 .hint { font-size: 12px; color: #666; margin-top: 6px; }
@@ -27,7 +27,11 @@ body.light {
   background-color: #f8fbff; 
   color: #222; 
 }
-#output.light { background: transparent; color:#222; }
+#output.light { 
+  background: #f8fbff; /* sama dengan body.light */ 
+  color:#222; 
+  border: 1px solid #ccc; 
+}
 #searchBox.light { background:#fff; color:#000; }
 
 /* Tema Dark */
@@ -36,7 +40,11 @@ body.dark {
   background-size: contain; 
   color: #eee; 
 }
-#output.dark { background: transparent; color:#eee; }
+#output.dark { 
+  background: #121212; /* sama dengan body.dark */ 
+  color:#eee; 
+  border: 1px solid #555; 
+}
 #searchBox.dark { background:#222; color:#fff; }
 
 /* Floating Running Text */
