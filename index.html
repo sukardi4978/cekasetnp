@@ -51,7 +51,8 @@ body.dark {
   font-family: 'Roboto Condensed', Arial, sans-serif;
   font-weight: 500;
   z-index: 9999;
-  padding: 4px 0;
+  padding: 6px 0;
+  font-size: 16px;
 }
 body.light #marqueeFloating { background: rgba(255,255,255,0.3); color: #1a73e8; }
 body.dark #marqueeFloating { background: rgba(0,0,0,0.3); color: #1a73e8; }
@@ -162,7 +163,7 @@ async function loadMarqueeFloating(){
     const res = await fetch(sheet5Url);
     const text = await res.text();
     const rows = text.split(/\r?\n/).map(r=>r.split(','));
-    const r1 = rows[0][17]||"";
+    const r1 = rows[0][17] || "Memuat info...";
     const textEl = document.getElementById("marqueeFloatingText");
     textEl.textContent = r1;
 
