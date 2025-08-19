@@ -1,182 +1,123 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Cek Aset – PT INKA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>Pencarian Aset</title>
   <style>
-    :root{
-      --bg: #eaf1f7;       /* biru keabu-abuan */
-      --card: #ffffff;
-      --border: #d8e1ea;
-      --text: #2c3e50;
-      --accent: #5d7b9d;
-    }
-    /* Background + watermark */
-    body{
-      margin:0;
+    body {
       font-family: Arial, sans-serif;
-      color: var(--text);
-      /* watermark (bisa ganti ke 'kereta.jpg' di folder yang sama) */
-      background-color: var(--bg);
-      background-image: url("https://upload.wikimedia.org/wikipedia/commons/f/f8/KRL_Commuterline_Jabodetabek.jpg");
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: cover;
+      background: #eef3f7 url("kereta.png") no-repeat center;
+      background-size: 60%;
       background-attachment: fixed;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      color: #2c3e50;
     }
-    /* lapisan pemutih agar teks tetap jelas — PENTING: z-index:0 (bukan -1) */
-    body::before{
-      content:"";
+    body::before {
+      content: "";
       position: fixed;
-      inset: 0;
-      background: rgba(234,241,247,0.90);
-      z-index: 0;
-      pointer-events: none;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(238,243,247,0.9); /* lapisan semi transparan agar teks tetap jelas */
+      z-index: -1;
     }
-
-    .app{ position: relative; z-index: 1; text-align:center; padding: 24px; }
-
-    h1{ margin:0 0 16px; color:#34495e; font-size: 22px; font-weight:700; }
-
-    .bar{
-      display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap;
-      background: rgba(255,255,255,0.85);
-      border:1px solid var(--border);
-      border-radius: 10px; padding:10px 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    h1 {
+      color: #34495e;
     }
-    #searchBox{
-      width: 320px; padding: 10px; font-size: 16px;
-      border:1px solid var(--border); border-radius:8px; background:#f9fbfc;
+    #searchBox {
+      width: 300px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #bdc3c7;
+      border-radius: 8px;
+      background: #f9fbfc;
     }
-    button{
-      padding:10px 14px; font-size:16px; border:0; border-radius:8px;
-      background: var(--accent); color:#fff; cursor:pointer; transition: filter .2s;
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #5d7b9d;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    button:hover{ filter: brightness(0.92); }
-
-    #output{
-      margin: 24px auto 0; max-width: 680px; text-align:left;
-      background: var(--card); border:1px solid var(--border);
-      border-radius: 12px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.08);
-      opacity: 0; transition: opacity .35s ease-in-out;
+    button:hover {
+      background: #4a6480;
+    }
+    #output {
+      margin: 30px auto 0;
+      max-width: 600px;
+      text-align: left;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       white-space: pre-wrap;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
     }
-    #output.show{ opacity: 1; }
-
-    /* teks hasil: rapat & monospace agar ":" sejajar */
-    #output pre{
-      margin:0; font-size:16px; line-height:1.25;
-      font-family: "Courier New", Courier, monospace;
+    #output.show {
+      opacity: 1;
     }
-
-    .hint{ margin-top:10px; font-size:12px; color:#5f6f82; }
+    #output b {
+      color: #2c3e50;
+    }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Cek Data Aset</h1>
-    <div class="bar">
-      <input id="searchBox" list="assetList" placeholder="Masukkan kode aset…" autocomplete="off">
-      <button onclick="searchAsset()">Cari</button>
-    </div>
-    <div class="hint">Tekan Enter untuk mencari. Kode 8 digit otomatis ditambah “-0”.</div>
+  <h1>Pencarian Data Aset</h1>
+  <input type="text" id="searchBox" placeholder="Masukkan kode aset...">
+  <button onclick="searchAsset()">Cari</button>
 
-    <datalist id="assetList"></datalist>
-    <div id="output"><pre>Silakan ketik kode aset…</pre></div>
-  </div>
+  <div id="output"></div>
 
   <script>
-    // ==== GANTI URL JIKA PERLU ====
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
-    // ===============================
-
     let assets = [];
 
-    // Parser CSV aman utk koma/quote
-    function parseCSV(text){
-      const lines = text.split(/\r?\n/);
-      return lines.map(line=>{
-        const cells=[]; let cur=""; let inQ=false;
-        for(let i=0;i<line.length;i++){
-          const ch=line[i];
-          if(ch==='"'){
-            if(inQ && line[i+1]==='"'){ cur+='"'; i++; }
-            else { inQ=!inQ; }
-          }else if(ch===',' && !inQ){ cells.push(cur); cur=""; }
-          else { cur+=ch; }
-        }
-        cells.push(cur);
-        return cells.map(c=>c.replace(/^"|"$/g,""));
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?output=csv")
+      .then(r => r.text())
+      .then(csv => {
+        let rows = csv.split("\n").map(r => r.split(","));
+        rows.shift();
+        assets = rows.map(r => ({
+          kode: r[0]?.trim(),
+          deskripsi: r[1] || "",
+          kapitalisasi: r[2] || "",
+          perolehan: r[3] || "",
+          lokasi: r[4] || "",
+          detail: r[5] || "",
+          opname: r[6] || "",
+          kondisi: r[7] || "",
+          catatan: r[16] || r[21] || ""
+        }));
       });
+
+    function formatAsset(a) {
+      let kondisiColor = a.kondisi.includes("Rusak") ? "red" : "green";
+      return `
+<b>Data Aset</b>       : ${a.kode}
+<b>Deskripsi</b>       : ${a.deskripsi}
+<b>Kapitalisasi</b>    : ${a.kapitalisasi}
+<b>Nilai Perolehan</b> : ${a.perolehan}
+<b>Lokasi</b>          : ${a.lokasi}
+<b>Detail Lokasi</b>   : ${a.detail}
+<b>Opname Terakhir</b> : ${a.opname}
+<b>Kondisi</b>         : <span style="color:${kondisiColor}">${a.kondisi}</span>
+<b>Catatan</b>         : ${a.catatan}`;
     }
 
-    async function loadSheet(){
-      const res = await fetch(sheetUrl);
-      const text = await res.text();
-      let rows = parseCSV(text);
-      // buang header jika ada
-      if(rows.length && rows[0].some(h => /kode|deskripsi|kapitalisasi/i.test(h))) rows.shift();
-
-      // mapping sesuai sheet: E,F,G,T,K/J,N,O,P, (Q fallback V)
-      assets = rows.map(r=>({
-        kode: (r[4]||"").trim(),
-        deskripsi: r[5]||"",
-        kapitalisasi: r[6]||"",
-        nilai: r[19]||"",
-        opname: r[10]||r[9]||"",
-        lokasi: r[13]||"",
-        detail: r[14]||"",
-        kondisi: r[15]||"",
-        catatan: (r[16] && r[16].trim()) ? r[16] : (r[21]||"")
-      })).filter(a=>a.kode);
-
-      // isi datalist
-      const dl = document.getElementById("assetList");
-      dl.innerHTML = "";
-      assets.map(a=>a.kode).sort((a,b)=>a.localeCompare(b)).forEach(k=>{
-        const opt=document.createElement("option"); opt.value=k; dl.appendChild(opt);
-      });
+    function searchAsset() {
+      let input = document.getElementById("searchBox").value.trim();
+      if (input.length === 8 && !input.includes("-")) input += "-0";
+      const asset = assets.find(a => a.kode === input);
+      let output = document.getElementById("output");
+      output.classList.remove("show");
+      output.innerHTML = asset ? formatAsset(asset) : "<b>Data tidak ditemukan</b>";
+      setTimeout(() => output.classList.add("show"), 50);
     }
-
-    function formatAsset(a){
-      const rows = [
-        ["Data Aset", a.kode],
-        ["Deskripsi", a.deskripsi],
-        ["Kapitalisasi", a.kapitalisasi],
-        ["Nilai Perolehan", a.nilai],
-        ["Lokasi", a.lokasi],
-        ["Detail Lokasi", a.detail],
-        ["Opname Terakhir", a.opname],
-        ["Kondisi", a.kondisi],
-        ["Catatan", a.catatan]
-      ];
-      const pad = Math.max(...rows.map(([l])=>l.length));
-      return rows.map(([l,v]) => l.padEnd(pad," ") + " : " + (v??"")).join("\n");
-    }
-
-    function searchAsset(){
-      const pre = document.querySelector("#output pre");
-      let kode = document.getElementById("searchBox").value.trim();
-      if(!kode){ pre.textContent="Masukkan kode aset terlebih dahulu."; return; }
-      if(kode.length===8 && !kode.includes("-")) kode += "-0";
-
-      const a = assets.find(x=>x.kode===kode);
-      const out = document.getElementById("output");
-      out.classList.remove("show");
-      pre.textContent = a ? formatAsset(a) : "Data tidak ditemukan.";
-      requestAnimationFrame(()=>out.classList.add("show"));
-    }
-
-    document.getElementById("searchBox").addEventListener("keydown", e=>{
-      if(e.key==="Enter") searchAsset();
-    });
-
-    loadSheet().catch(err=>{
-      document.querySelector("#output pre").textContent = "Gagal memuat data: " + err;
-      document.getElementById("output").classList.add("show");
-    });
   </script>
 </body>
 </html>
