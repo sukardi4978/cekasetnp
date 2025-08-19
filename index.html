@@ -1,215 +1,62 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cek Aset Non Produksi PT INKA</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background: url('https://upload.wikimedia.org/wikipedia/commons/f/f8/KRL_Commuterline_Jabodetabek.jpg') no-repeat center center fixed;
-    background-size: cover;
-  }
-  .overlay {
-    background-color: rgba(255,255,255,0.95);
-    min-height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  .search-box {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 15px;
-  }
-  .search-box input {
-    flex: 1 1 200px;
-    padding: 6px;
-    font-size: 15px;
-    min-width: 120px;
-  }
-  .search-box button {
-    padding: 6px 12px;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  .result {
-    font-size: 14px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .result-row {
-    display: grid;
-    grid-template-columns: 130px 10px auto;
-    border-bottom: 1px solid #eee;
-    padding: 4px 8px;
-    line-height: 1.3;
-  }
-  .result-label {
-    text-align: right;
-    font-weight: bold;
-    color: #333;
-    padding-right: 4px;
-  }
-  .result-colon {
-    text-align: center;
-  }
-  .result-data {
-    text-align: left;
-    color: #222;
-  }
-  .result-data.keterangan {
-    grid-column: 1 / 4;
-    font-style: italic;
-    color: #555;
-    border-top: 1px dashed #ddd;
-    margin-top: 4px;
-    padding-top: 4px;
-  }
-  .autocomplete-items {
-    border: 1px solid #ccc;
-    border-top: none;
-    max-height: 150px;
-    overflow-y: auto;
-    background: white;
-    position: absolute;
-    z-index: 99;
-    width: 100%;
-  }
-  .autocomplete-items div {
-    padding: 6px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .autocomplete-items div:hover {
-    background-color: #f1f1f1;
-  }
-  footer {
-    margin-top: 20px;
-    font-size: 13px;
-    color: darkblue;
-    font-weight: bold;
-    text-align: center;
-    animation: marquee 15s linear infinite;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  @keyframes marquee {
-    0% { text-indent: 100%; }
-    100% { text-indent: -100%; }
-  }
-  @media (max-width: 480px) {
-    .result-row {
-      grid-template-columns: 1fr 10px 2fr;
-      font-size: 13px;
-    }
-    .search-box input {
-      flex: 1 1 100%;
-      font-size: 13px;
-      padding: 5px;
-    }
-    .search-box button {
-      padding: 5px 10px;
-      font-size: 13px;
-    }
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Cek Aset</title>
 </head>
 <body>
-<div class="overlay">
-  <div class="search-box">
-    <div style="position:relative; flex:1 1 200px;">
-      <input type="text" id="kodeInput" placeholder="Masukkan kode aset...">
-      <div id="autocomplete-list" class="autocomplete-items"></div>
-    </div>
-    <button onclick="searchAsset()">🔍</button>
-  </div>
-  <div id="result" class="result"></div>
-  <footer id="runningText"></footer>
-</div>
+  <h2>Cek Aset</h2>
+  <input type="text" id="searchBox" placeholder="Masukkan Kode Aset">
+  <button onclick="searchAsset()">Cari</button>
 
-<script>
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
-let assets = [];
-let runningText = "";
+  <div id="assetResult" style="margin-top:20px;"></div>
 
-fetch(csvUrl)
-  .then(res => res.text())
-  .then(text => {
-    const rows = text.split(/\r?\n/).map(r => r.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/));
-    rows.shift();
-    assets = rows.map(r => ({
-      kode: r[4]?.trim(),
-      deskripsi: r[5] || "",
-      kapitalisasi: r[6] || "",
-      nilai: r[19] || "",
-      opname: r[10] || r[9] || "",
-      lokasi: r[13] || "",
-      detail: r[14] || "",
-      kondisi: r[15] || "",
-      keterangan: r[16] || r[21] || ""
-    }));
-    runningText = rows[0]?.[17] || "";
-    document.getElementById("runningText").textContent = runningText;
-  });
+  <script>
+    // Ganti dengan URL JSON dari Google Sheets (Publish to Web -> CSV -> convert ke JSON pakai link)
+    const sheetURL = "https://opensheet.elk.sh/1k4y2SAMPLEID/sheet1"; 
 
-const input = document.getElementById('kodeInput');
-const list = document.getElementById('autocomplete-list');
+    async function searchAsset() {
+      const kodeInput = document.getElementById("searchBox").value.trim();
+      if (!kodeInput) {
+        alert("Masukkan kode aset terlebih dahulu!");
+        return;
+      }
 
-input.addEventListener('input', function() {
-  const val = this.value.trim().toLowerCase();
-  list.innerHTML = '';
-  if (!val) return;
+      try {
+        const response = await fetch(sheetURL);
+        const data = await response.json();
 
-  const matches = assets
-    .filter(a => a.kode && a.kode.toLowerCase().startsWith(val))
-    .sort((a,b) => a.kode.localeCompare(b.kode))
-    .slice(0,10);
+        // cari aset berdasarkan kode
+        const asset = data.find(row => row["Data Aset"] === kodeInput);
 
-  matches.forEach(m => {
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>${m.kode.substr(0,val.length)}</strong>${m.kode.substr(val.length)}`;
-    div.onclick = () => {
-      input.value = m.kode;
-      list.innerHTML = '';
-      searchAsset();
-    };
-    list.appendChild(div);
-  });
-});
+        if (asset) {
+          displayAsset(asset);
+        } else {
+          document.getElementById("assetResult").innerHTML = 
+            "<p>Aset tidak ditemukan.</p>";
+        }
+      } catch (error) {
+        console.error(error);
+        document.getElementById("assetResult").innerHTML = 
+          "<p>Gagal mengambil data.</p>";
+      }
+    }
 
-input.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') searchAsset();
-});
-
-function searchAsset() {
-  let kode = input.value.trim();
-  if (kode.length === 8 && !kode.includes("-")) kode += "-0";
-
-  const asset = assets.find(a => a.kode === kode);
-  if (!asset) {
-    document.getElementById('result').textContent = "Data tidak ditemukan.";
-    return;
-  }
-
-  document.getElementById('result').innerHTML = `
-    <div class="result-row"><div class="result-label">Data Aset</div><div class="result-colon">:</div><div class="result-data">${asset.kode}</div></div>
-    <div class="result-row"><div class="result-label">Deskripsi</div><div class="result-colon">:</div><div class="result-data">${asset.deskripsi}</div></div>
-    <div class="result-row"><div class="result-label">Kapitalisasi</div><div class="result-colon">:</div><div class="result-data">${asset.kapitalisasi}</div></div>
-    <div class="result-row"><div class="result-label">Nilai Perolehan</div><div class="result-colon">:</div><div class="result-data">${asset.nilai}</div></div>
-    <div class="result-row"><div class="result-label">Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.lokasi}</div></div>
-    <div class="result-row"><div class="result-label">Detail Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.detail}</div></div>
-    <div class="result-row"><div class="result-label">Opname Terakhir</div><div class="result-colon">:</div><div class="result-data">${asset.opname}</div></div>
-    <div class="result-row"><div class="result-label">Kondisi</div><div class="result-colon">:</div><div class="result-data">${asset.kondisi}</div></div>
-    <div class="result-row">
-      <div class="result-data keterangan">${asset.keterangan}</div>
-    </div>
-  `;
-  list.innerHTML = '';
-}
-</script>
+    function displayAsset(asset) {
+      document.getElementById("assetResult").innerHTML = `
+        <table style="border-collapse: collapse; text-align: left;">
+          <tr><td style="padding:2px;">Data Aset</td><td style="padding:2px;">:</td><td style="padding:2px;">${asset["Data Aset"]}</td></tr>
+          <tr><td style="padding:2px;">Deskripsi</td><td>:</td><td>${asset.Deskripsi}</td></tr>
+          <tr><td style="padding:2px;">Kapitalisasi</td><td>:</td><td>${asset.Kapitalisasi}</td></tr>
+          <tr><td style="padding:2px;">Nilai Perolehan</td><td>:</td><td>${asset["Nilai Perolehan"]}</td></tr>
+          <tr><td style="padding:2px;">Lokasi</td><td>:</td><td>${asset.Lokasi}</td></tr>
+          <tr><td style="padding:2px;">Detail Lokasi</td><td>:</td><td>${asset["Detail Lokasi"]}</td></tr>
+          <tr><td style="padding:2px;">Opname Terakhir</td><td>:</td><td>${asset["Opname Terakhir"]}</td></tr>
+          <tr><td style="padding:2px;">Kondisi</td><td>:</td><td>${asset.Kondisi}</td></tr>
+          <tr><td style="padding:2px;" colspan="3">${asset.Catatan || ""}</td></tr>
+        </table>
+      `;
+    }
+  </script>
 </body>
 </html>
