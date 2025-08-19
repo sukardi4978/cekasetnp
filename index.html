@@ -6,20 +6,31 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f6f9;
+      background: #eef3f7 url("kereta.png") no-repeat center;
+      background-size: 60%;
+      background-attachment: fixed;
       margin: 0;
       padding: 20px;
       text-align: center;
+      color: #2c3e50;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(238,243,247,0.9); /* lapisan semi transparan agar teks tetap jelas */
+      z-index: -1;
     }
     h1 {
-      color: #333;
+      color: #34495e;
     }
     #searchBox {
       width: 300px;
       padding: 10px;
       font-size: 16px;
-      border: 1px solid #ccc;
+      border: 1px solid #bdc3c7;
       border-radius: 8px;
+      background: #f9fbfc;
     }
     button {
       padding: 10px 15px;
@@ -27,22 +38,22 @@
       margin-left: 10px;
       border: none;
       border-radius: 8px;
-      background: #007bff;
+      background: #5d7b9d;
       color: white;
       cursor: pointer;
       transition: background 0.3s;
     }
     button:hover {
-      background: #0056b3;
+      background: #4a6480;
     }
     #output {
       margin: 30px auto 0;
       max-width: 600px;
       text-align: left;
-      background: #fff;
+      background: #ffffff;
       border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       white-space: pre-wrap;
       line-height: 1.6;
       opacity: 0;
@@ -52,7 +63,7 @@
       opacity: 1;
     }
     #output b {
-      color: #444;
+      color: #2c3e50;
     }
   </style>
 </head>
@@ -66,12 +77,11 @@
   <script>
     let assets = [];
 
-    // Ambil data dari Google Sheets (CSV publik)
     fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?output=csv")
       .then(r => r.text())
       .then(csv => {
         let rows = csv.split("\n").map(r => r.split(","));
-        let headers = rows.shift();
+        rows.shift();
         assets = rows.map(r => ({
           kode: r[0]?.trim(),
           deskripsi: r[1] || "",
@@ -81,7 +91,7 @@
           detail: r[5] || "",
           opname: r[6] || "",
           kondisi: r[7] || "",
-          catatan: r[16] || r[21] || ""  // ambil dari kolom Q, fallback V
+          catatan: r[16]  ""
         }));
       });
 
