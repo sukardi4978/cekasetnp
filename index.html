@@ -6,22 +6,8 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
     #searchBox { width: 300px; padding: 10px; font-size: 16px; }
-    #output { 
-      margin-top: 20px; 
-      text-align: left; 
-      display: inline-block; 
-      border: 1px solid #ccc; 
-      padding: 10px; 
-    }
-    .asset-table {
-      display: grid;
-      grid-template-columns: 180px auto; /* lebar label dan isi */
-      row-gap: 6px;
-      column-gap: 10px;
-      font-size: 16px;
-      line-height: 1.3;
-    }
-    .label { font-weight: bold; }
+    #output { margin-top: 20px; text-align: left; display: inline-block; border: 1px solid #ccc; padding: 10px; white-space: pre-wrap; }
+    #output pre { margin: 0; font-size: 16px; line-height: 1.3; font-family: "Courier New", Courier, monospace; } /* monospace -> ":" sejajar */
   </style>
 </head>
 <body>
@@ -37,11 +23,12 @@
     async function loadSheet() {
       const response = await fetch(sheetUrl);
       const data = await response.text();
-      const rows = data.split("\n").map(r => 
+      const rows = data.split("\n").map(r =>
         r.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(c => c.replace(/^"|"$/g, ""))
       );
       rows.shift(); // hapus header
 
+      // mapping baris ke objek
       assets = rows.map(r => ({
         kode: r[1] || "",
         deskripsi: r[2] || "",
@@ -51,13 +38,13 @@
         detail: r[6] || "",
         opname: r[18] || "",
         kondisi: r[19] || "",
-        catatan: r[16] ? r[16] : (r[21] || "")
+        catatan: r[16] ? r[16] : (r[21] || "")   // Q kalau ada, kosong -> V
       }));
 
       const dataList = document.getElementById("assetList");
       assets.forEach(a => {
         if (a.kode) {
-          let option = document.createElement("option");
+          const option = document.createElement("option");
           option.value = a.kode;
           dataList.appendChild(option);
         }
@@ -76,19 +63,23 @@
     }
 
     function formatAsset(a) {
-      return `
-        <div class="asset-table">
-          <div class="label">Data Aset</div><div>: ${a.kode}</div>
-          <div class="label">Deskripsi</div><div>: ${a.deskripsi}</div>
-          <div class="label">Kapitalisasi</div><div>: ${a.kapitalisasi}</div>
-          <div class="label">Nilai Perolehan</div><div>: ${a.perolehan}</div>
-          <div class="label">Lokasi</div><div>: ${a.lokasi}</div>
-          <div class="label">Detail Lokasi</div><div>: ${a.detail}</div>
-          <div class="label">Opname Terakhir</div><div>: ${a.opname}</div>
-          <div class="label">Kondisi</div><div>: ${a.kondisi}</div>
-          <div class="label">Catatan</div><div>: ${a.catatan}</div>
-        </div>
-      `;
+      const rows = [
+        ["Data Aset", a.kode],
+        ["Deskripsi", a.deskripsi],
+        ["Kapitalisasi", a.kapitalisasi],
+        ["Nilai Perolehan", a.perolehan],
+        ["Lokasi", a.lokasi],
+        ["Detail Lokasi", a.detail],
+        ["Opname Terakhir", a.opname],
+        ["Kondisi", a.kondisi],
+        [a.catatan]
+      ];
+
+      // Lebar label terpanjang -> padding dinamis
+      const maxLabelLen = Math.max(...rows.map(([label]) => label.length));
+      const lines = rows.map(([label, val]) => label.padEnd(maxLabelLen, " ") + " : " + (val || ""));
+
+      return `<pre>${lines.join("\n")}</pre>`;
     }
 
     loadSheet();
