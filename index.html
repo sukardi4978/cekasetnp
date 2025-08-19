@@ -47,13 +47,17 @@
   .result-row {
     display: grid;
     grid-template-columns: 150px 10px auto;
-    line-height: 1;
+    line-height: 1;       /* rapat */
+    margin: 0;
+    padding: 0;
   }
-  .result-label { font-weight: bold; }
-  .result-colon { text-align: center; }
-  .result-data { white-space: normal; }
+  .result-label, .result-colon, .result-data {
+    margin: 0;
+    padding: 0;
+  }
   .result-data.keterangan {
     grid-column: 1 / 4;
+    margin-top: 2px;
   }
   @media (max-width: 400px) {
     .search-box {
