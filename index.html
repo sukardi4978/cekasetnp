@@ -2,60 +2,87 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Cek Aset</title>
+  <title>Aplikasi Cek Aset</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    input {
+      padding: 6px;
+      font-size: 14px;
+      width: 280px;
+    }
+    button {
+      padding: 6px 12px;
+      font-size: 14px;
+      margin-left: 6px;
+    }
+    pre {
+      background: white;
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      line-height: 1.5em;
+    }
+  </style>
 </head>
 <body>
-  <h2>Cek Aset</h2>
-  <input type="text" id="searchBox" placeholder="Masukkan Kode Aset">
+  <h2>🔍 Cek Aset</h2>
+  <input id="kodeInput" type="text" placeholder="Masukkan kode aset">
   <button onclick="searchAsset()">Cari</button>
 
-  <div id="assetResult" style="margin-top:20px;"></div>
+  <pre id="result">Hasil pencarian akan muncul di sini...</pre>
 
   <script>
-    // Ganti dengan URL JSON dari Google Sheets (Publish to Web -> CSV -> convert ke JSON pakai link)
-    const sheetURL = "https://opensheet.elk.sh/1k4y2SAMPLEID/sheet1"; 
+    // Ganti dengan link JSON dari opensheet.elk.sh
+    const sheetURL = "https://opensheet.elk.sh/SPREADSHEET_ID/Sheet1";
+    let assets = [];
 
-    async function searchAsset() {
-      const kodeInput = document.getElementById("searchBox").value.trim();
-      if (!kodeInput) {
-        alert("Masukkan kode aset terlebih dahulu!");
+    // Ambil data dari Google Sheet
+    fetch(sheetURL)
+      .then(res => res.json())
+      .then(data => {
+        assets = data;
+        console.log("Data aset berhasil dimuat:", assets);
+      })
+      .catch(err => {
+        console.error("Gagal memuat data aset:", err);
+      });
+
+    function searchAsset() {
+      const kode = document.getElementById("kodeInput").value.trim().toLowerCase();
+      const resultBox = document.getElementById("result");
+
+      if (!kode) {
+        resultBox.textContent = "❗ Silakan masukkan kode aset.";
         return;
       }
 
-      try {
-        const response = await fetch(sheetURL);
-        const data = await response.json();
+      const aset = assets.find(a => (a["Data Aset"] || "").toLowerCase() === kode);
 
-        // cari aset berdasarkan kode
-        const asset = data.find(row => row["Data Aset"] === kodeInput);
+      if (aset) {
+        // Susun hasil dengan rata kiri dan ":" lurus ke bawah
+        let output = "";
+        output += `Data Aset       : ${aset["Data Aset"] || "-"}\n`;
+        output += `Deskripsi       : ${aset["Deskripsi"] || "-"}\n`;
+        output += `Kapitalisasi    : ${aset["Kapitalisasi"] || "-"}\n`;
+        output += `Nilai Perolehan : ${aset["Nilai Perolehan"] || "-"}\n`;
+        output += `Lokasi          : ${aset["Lokasi"] || "-"}\n`;
+        output += `Detail Lokasi   : ${aset["Detail Lokasi"] || "-"}\n`;
+        output += `Opname Terakhir : ${aset["Opname Terakhir"] || "-"}\n`;
+        output += `Kondisi         : ${aset["Kondisi"] || "-"}\n`;
+        output += `Catatan         : ${aset["Catatan"] || "-"}\n`;
 
-        if (asset) {
-          displayAsset(asset);
-        } else {
-          document.getElementById("assetResult").innerHTML = 
-            "<p>Aset tidak ditemukan.</p>";
-        }
-      } catch (error) {
-        console.error(error);
-        document.getElementById("assetResult").innerHTML = 
-          "<p>Gagal mengambil data.</p>";
+        resultBox.textContent = output;
+      } else {
+        resultBox.textContent = `❌ Aset dengan kode "${kode}" tidak ditemukan.`;
       }
-    }
-
-    function displayAsset(asset) {
-      document.getElementById("assetResult").innerHTML = `
-        <table style="border-collapse: collapse; text-align: left;">
-          <tr><td style="padding:2px;">Data Aset</td><td style="padding:2px;">:</td><td style="padding:2px;">${asset["Data Aset"]}</td></tr>
-          <tr><td style="padding:2px;">Deskripsi</td><td>:</td><td>${asset.Deskripsi}</td></tr>
-          <tr><td style="padding:2px;">Kapitalisasi</td><td>:</td><td>${asset.Kapitalisasi}</td></tr>
-          <tr><td style="padding:2px;">Nilai Perolehan</td><td>:</td><td>${asset["Nilai Perolehan"]}</td></tr>
-          <tr><td style="padding:2px;">Lokasi</td><td>:</td><td>${asset.Lokasi}</td></tr>
-          <tr><td style="padding:2px;">Detail Lokasi</td><td>:</td><td>${asset["Detail Lokasi"]}</td></tr>
-          <tr><td style="padding:2px;">Opname Terakhir</td><td>:</td><td>${asset["Opname Terakhir"]}</td></tr>
-          <tr><td style="padding:2px;">Kondisi</td><td>:</td><td>${asset.Kondisi}</td></tr>
-          <tr><td style="padding:2px;" colspan="3">${asset.Catatan || ""}</td></tr>
-        </table>
-      `;
     }
   </script>
 </body>
