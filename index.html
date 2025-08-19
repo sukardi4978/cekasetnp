@@ -1,142 +1,87 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Cek Aset Non Produksi PT INKA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>Data Catatan</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-    #searchBox { width: 320px; padding: 10px; font-size: 16px; }
-    #output { margin-top: 20px; text-align: left; display: inline-block; border: 1px solid #ccc; padding: 12px; }
-    #output pre {
+    body {
+      font-family: Arial, sans-serif;
       margin: 0;
-      font-size: 16px;
-      line-height: 1.2;         /* spasi lebih rapat */
-      font-family: "Courier New", Courier, monospace; /* monospace agar ":" sejajar */
-      white-space: pre-wrap;
+      padding: 20px;
+      background: #e0e6ed; /* biru keabu-abuan */
+      position: relative;
+      min-height: 100vh;
+      color: #222;
     }
-    .hint { font-size: 12px; color: #666; margin-top: 6px; }
+
+    /* Watermark gambar */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("kereta.png") no-repeat center center;
+      background-size: 70%;
+      opacity: 0.08;   /* membuat samar */
+      z-index: -1;     /* di belakang konten */
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .entry {
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+      line-height: 1.4;
+    }
+
+    .label {
+      display: inline-block;
+      min-width: 120px; /* agar titik dua rata */
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h2>Cek Data Aset</h2>
-  <input type="text" id="searchBox" placeholder="Masukkan Data Aset..." list="assetList" autocomplete="off" />
-  <datalist id="assetList"></datalist>
-  <div class="hint">Tekan Enter untuk mencari. Jika kode 8 digit tanpa “-”, otomatis ditambah “-0”.</div>
-
-  <div id="output"><pre>Silakan ketik kode aset…</pre></div>
+  <div class="container" id="content">
+    <p>Memuat data...</p>
+  </div>
 
   <script>
-    // ====== GANTI URL INI JIKA PERLU ======
-    // Link CSV publik dari Google Sheets (punyamu):
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
-    // =======================================
+    async function loadData() {
+      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?output=csv";
+      const response = await fetch(url);
+      const text = await response.text();
+      const rows = text.split("\n").map(r => r.split(","));
 
-    let assets = [];
+      const content = document.getElementById("content");
+      content.innerHTML = "";
 
-    // Parser CSV yang aman terhadap koma di dalam tanda kutip
-    function parseCSV(text) {
-      const lines = text.split(/\r?\n/);
-      return lines.map(line => {
-        const cells = [];
-        let cur = "", inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') {
-            if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; } // escaped quote
-            else { inQuotes = !inQuotes; }
-          } else if (ch === ',' && !inQuotes) {
-            cells.push(cur); cur = "";
-          } else {
-            cur += ch;
-          }
+      rows.slice(1).forEach(row => {
+        if (row.length > 0) {
+          let catatan = row[16] || row[21] || "-"; // kolom Q (16) atau V (21)
+          const div = document.createElement("div");
+          div.className = "entry";
+          div.innerHTML = `
+            <div><span class="label">ID</span>: ${row[0] || "-"}</div>
+            <div><span class="label">Nama</span>: ${row[1] || "-"}</div>
+            <div><span class="label">Catatan</span>: ${catatan}</div>
+          `;
+          content.appendChild(div);
         }
-        cells.push(cur);
-        // hapus tanda kutip pembungkus awal/akhir
-        return cells.map(c => c.replace(/^"|"$/g, ""));
       });
     }
 
-    async function loadSheet() {
-      const res = await fetch(sheetUrl);
-      const text = await res.text();
-      const rows = parseCSV(text);
-      // Jika ada header, dan kamu ingin membuangnya, aktifkan baris ini:
-      // rows.shift();
-
-      // Mapping kolom sesuai sheet kamu (berdasarkan kode awalmu):
-      // E(4)=kode, F(5)=deskripsi, G(6)=kapitalisasi, T(19)=nilai,
-      // K(10) atau J(9)=opname, N(13)=lokasi, O(14)=detail, P(15)=kondisi,
-      // Q(16) atau V(21)=catatan.
-      assets = rows.map(r => ({
-        kode: (r[4] || "").trim(),
-        deskripsi: r[5] || "",
-        kapitalisasi: r[6] || "",
-        nilai: r[19] || "",
-        opname: r[10] || r[9] || "",
-        lokasi: r[13] || "",
-        detail: r[14] || "",
-        kondisi: r[15] || "",
-        catatan: (r[16] && r[16].trim()) ? r[16] : (r[21] || "")
-      })).filter(a => a.kode); // hanya yang punya kode
-
-      // Isi datalist untuk auto-saran
-      const dataList = document.getElementById("assetList");
-      dataList.innerHTML = "";
-      assets
-        .map(a => a.kode)
-        .sort((a,b) => a.localeCompare(b))
-        .slice(0, 5000) // batasi jika perlu
-        .forEach(k => {
-          const opt = document.createElement("option");
-          opt.value = k;
-          dataList.appendChild(opt);
-        });
-    }
-
-    // Format dengan ":" lurus kebawah (padding dinamis + monospace)
-    function formatAsset(a) {
-      const rows = [
-        ["Data Aset", a.kode],
-        ["Deskripsi", a.deskripsi],
-        ["Kapitalisasi", a.kapitalisasi],
-        ["Nilai Perolehan", a.nilai],
-        ["Lokasi", a.lokasi],
-        ["Detail Lokasi", a.detail],
-        ["Opname Terakhir", a.opname],
-        ["Kondisi", a.kondisi],
-        ["Catatan", a.catatan]
-      ];
-      const maxLabelLen = Math.max(...rows.map(([label]) => label.length));
-      const lines = rows.map(([label, val]) =>
-        label.padEnd(maxLabelLen, " ") + " : " + (val ?? "")
-      );
-      return lines.join("\n");
-    }
-
-    function searchAsset() {
-      const pre = document.querySelector("#output pre");
-      let kode = document.getElementById("searchBox").value.trim();
-      if (!kode) { pre.textContent = "Masukkan kode aset terlebih dahulu."; return; }
-
-      if (kode.length === 8 && !kode.includes("-")) kode += "-0";
-
-      const found = assets.find(a => a.kode === kode);
-      if (!found) {
-        pre.textContent = "Data tidak ditemukan.";
-        return;
-      }
-      pre.textContent = formatAsset(found);
-    }
-
-    document.getElementById("searchBox").addEventListener("keydown", e => {
-      if (e.key === "Enter") searchAsset();
-    });
-
-    // Muat data saat halaman dibuka
-    loadSheet().catch(err => {
-      document.querySelector("#output pre").textContent = "Gagal memuat data: " + err;
-    });
+    loadData();
   </script>
 </body>
 </html>
