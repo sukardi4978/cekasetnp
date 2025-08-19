@@ -44,12 +44,19 @@
   }
   .result-row {
     display: grid;
-    grid-template-columns: 150px auto;
-    line-height: 1.2; /* spasi rapat */
-    margin-bottom: 2px;
+    grid-template-columns: 150px 10px auto; /* label : data */
+    line-height: 1;       /* spasi rapat, 1 baris */
+    margin-bottom: 0;     /* rapat */
   }
-  .result-label::after {
-    content: " :"; /* titik dua rata vertikal */
+  .result-label {
+    text-align: left;
+    font-weight: bold;
+  }
+  .result-colon {
+    text-align: center;
+  }
+  .result-data {
+    text-align: left;
   }
   .autocomplete-items {
     border: 1px solid #ccc;
@@ -81,6 +88,23 @@
   @keyframes marquee {
     0% { text-indent: 100%; }
     100% { text-indent: -100%; }
+  }
+
+  /* Responsif untuk HP */
+  @media (max-width: 480px) {
+    .result-row {
+      grid-template-columns: 1fr 10px 2fr; /* label : data */
+      font-size: 14px;
+    }
+    .search-box input {
+      flex: 1 1 100%;
+      font-size: 14px;
+      padding: 6px;
+    }
+    .search-box button {
+      padding: 6px 10px;
+      font-size: 14px;
+    }
   }
 </style>
 </head>
@@ -163,15 +187,15 @@ function searchAsset() {
   }
 
   document.getElementById('result').innerHTML = `
-    <div class="result-row"><div class="result-label">Kode Aset</div><div>${asset.kode}</div></div>
-    <div class="result-row"><div class="result-label">Deskripsi</div><div>${asset.deskripsi}</div></div>
-    <div class="result-row"><div class="result-label">Kapitalisasi</div><div>${asset.kapitalisasi}</div></div>
-    <div class="result-row"><div class="result-label">Nilai Perolehan</div><div>${asset.nilai}</div></div>
-    <div class="result-row"><div class="result-label">Lokasi</div><div>${asset.lokasi}</div></div>
-    <div class="result-row"><div class="result-label">Detail Lokasi</div><div>${asset.detail}</div></div>
-    <div class="result-row"><div class="result-label">Opname Terakhir</div><div>${asset.opname}</div></div>
-    <div class="result-row"><div class="result-label">Kondisi</div><div>${asset.kondisi}</div></div>
-    <div class="result-row"><div class="result-label">Keterangan</div><div>${asset.keterangan}</div></div>
+    <div class="result-row"><div class="result-label">Data Aset</div><div class="result-colon">:</div><div class="result-data">${asset.kode}</div></div>
+    <div class="result-row"><div class="result-label">Deskripsi</div><div class="result-colon">:</div><div class="result-data">${asset.deskripsi}</div></div>
+    <div class="result-row"><div class="result-label">Kapitalisasi</div><div class="result-colon">:</div><div class="result-data">${asset.kapitalisasi}</div></div>
+    <div class="result-row"><div class="result-label">Nilai Perolehan</div><div class="result-colon">:</div><div class="result-data">${asset.nilai}</div></div>
+    <div class="result-row"><div class="result-label">Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.lokasi}</div></div>
+    <div class="result-row"><div class="result-label">Detail Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.detail}</div></div>
+    <div class="result-row"><div class="result-label">Opname Terakhir</div><div class="result-colon">:</div><div class="result-data">${asset.opname}</div></div>
+    <div class="result-row"><div class="result-label">Kondisi</div><div class="result-colon">:</div><div class="result-data">${asset.kondisi}</div></div>
+    <div class="result-row"><div class="result-label">Keterangan</div><div class="result-colon">:</div><div class="result-data">${asset.keterangan}</div></div>
   `;
   list.innerHTML = '';
 }
