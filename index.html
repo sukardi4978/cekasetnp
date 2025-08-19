@@ -44,9 +44,9 @@
   }
   .result-row {
     display: grid;
-    grid-template-columns: 150px 10px auto; /* label : data */
-    line-height: 1;       /* spasi rapat, 1 baris */
-    margin-bottom: 0;     /* rapat */
+    grid-template-columns: 150px 10px auto; /* label : colon : data */
+    line-height: 1;
+    margin-bottom: 0;
   }
   .result-label {
     text-align: left;
@@ -57,6 +57,8 @@
   }
   .result-data {
     text-align: left;
+    line-height: 1;
+    white-space: normal; /* wrap text panjang */
   }
   .autocomplete-items {
     border: 1px solid #ccc;
@@ -93,7 +95,7 @@
   /* Responsif untuk HP */
   @media (max-width: 480px) {
     .result-row {
-      grid-template-columns: 1fr 10px 2fr; /* label : data */
+      grid-template-columns: 1fr 10px 2fr;
       font-size: 14px;
     }
     .search-box input {
@@ -195,7 +197,11 @@ function searchAsset() {
     <div class="result-row"><div class="result-label">Detail Lokasi</div><div class="result-colon">:</div><div class="result-data">${asset.detail}</div></div>
     <div class="result-row"><div class="result-label">Opname Terakhir</div><div class="result-colon">:</div><div class="result-data">${asset.opname}</div></div>
     <div class="result-row"><div class="result-label">Kondisi</div><div class="result-colon">:</div><div class="result-data">${asset.kondisi}</div></div>
-    <div class="result-row"><div class="result-label">Keterangan</div><div class="result-colon">:</div><div class="result-data">${asset.keterangan}</div></div>
+    <!-- Keterangan full width tanpa label -->
+    <div class="result-row">
+      <div class="result-colon"></div>
+      <div class="result-data" style="grid-column:1 / 4; white-space: normal;">${asset.keterangan}</div>
+    </div>
   `;
   list.innerHTML = '';
 }
