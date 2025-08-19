@@ -42,11 +42,11 @@
 </head>
 <body>
   <h2>Cek Data Aset</h2>
-  <input type="text" id="searchBox" placeholder="Masukkan Data Aset..." list="assetList" autocomplete="off" />
+  <input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" />
   <datalist id="assetList"></datalist>
   <div class="hint">Tekan Enter untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
 
-  <div id="output"><pre>Silakan ketik kode aset…</pre></div>
+  <div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
 
   <script>
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
@@ -114,7 +114,7 @@
       }
 
       const rows = [
-        ["Data Aset", a.kode],
+        ["Nomor Aset", a.kode],
         ["Deskripsi", a.deskripsi],
         ["Kapitalisasi", a.kapitalisasi],
         ["Nilai Perolehan", nilaiText],
@@ -134,7 +134,7 @@
     function searchAsset() {
       const pre = document.querySelector("#output pre");
       let kode = searchBox.value.trim();
-      if (!kode) { pre.textContent = "Masukkan kode aset terlebih dahulu."; return; }
+      if (!kode) { pre.textContent = "Masukkan Nomor Aset terlebih dahulu."; return; }
 
       // Otomatis -0
       if (/^\d{8}$/.test(kode)) {
