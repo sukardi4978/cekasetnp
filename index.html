@@ -135,14 +135,17 @@ searchBox.addEventListener("keydown",e=>{ if(e.key==="Enter") searchAsset(); });
 searchBox.addEventListener("focus",function(){ setTimeout(()=>{this.select();},0); });
 document.getElementById("searchButton").addEventListener("click", searchAsset);
 
-// Running Text marquee
+// Running Text marquee dengan jeda adaptif
 const textEl=document.getElementById("marqueeFloatingText"); textEl.style.display="inline-block";
 window.addEventListener("load",()=>{
-  let offset=10; 
+  let offset=window.innerWidth;
   function runMarquee(){
-    offset-=1;
+    offset-=2; // kecepatan jalan
     textEl.style.transform=`translateX(${offset}px)`;
-    if(Math.abs(offset)>textEl.offsetWidth + window.innerWidth) offset=window.innerWidth;
+    if(offset < -textEl.offsetWidth){
+      const jeda = Math.max(0, Math.floor(window.innerWidth/20)); 
+      setTimeout(()=>{ offset=window.innerWidth; }, jeda);
+    }
     requestAnimationFrame(runMarquee);
   }
   runMarquee();
