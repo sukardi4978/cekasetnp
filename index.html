@@ -1,182 +1,148 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cek Aset Non Produksi PT INKA</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto+Mono&display=swap" rel="stylesheet">
-
 <style>
-body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial, sans-serif; transition: background 0.3s, color 0.3s; }
-#searchBox { padding: 8px; font-size: 16px; font-family: 'Roboto Condensed', Arial, sans-serif; vertical-align: middle; transition: all 0.2s ease; }
-#searchBox:focus { border: 2px solid #1a73e8; box-shadow: 0 0 6px rgba(26,115,232,0.4); outline: none; }
-#searchButton { font-size: 16px; padding: 8px 12px; vertical-align: middle; cursor: pointer; }
-
-#output { 
-  margin-top: 60px; 
-  text-align: left; 
-  display: inline-block; 
-  padding: 12px; 
-  border-radius:6px; 
-  transition: background 0.3s, color 0.3s, border 0.3s; 
-  max-width: 95%;
-}
-.hint { font-size: 12px; color: #666; margin-top: 6px; }
-
-/* Struktur hasil dengan grid */
-.asset-row {
-  display: grid;
-  grid-template-columns: 140px 10px 1fr; /* label tetap, titik dua, isi fleksibel */
-  padding: 6px 0;              /* lebih lega */
-  border-bottom: 1px solid #ddd;
-}
-.asset-row:last-child { border-bottom: none; }
-
-.asset-label { font-weight: 500; text-align: left; }
-.asset-sep { text-align: center; }
-.asset-value { word-wrap: break-word; white-space: pre-wrap; }
-
-/* Tombol tema */
-#themeToggle {
-  display: block;          
-  margin: 10px auto 0 auto; 
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-/* Tema Light */
-body.light { background-color: #f8fbff; color: #222; }
-#output.light { background: #f8fbff; color:#222; border: 1px solid #ccc; }
-#searchBox.light { background:#fff; color:#000; }
-
-/* Tema Dark */
-body.dark { background: #121212; color: #eee; }
-#output.dark { background: #121212; color:#eee; border: 1px solid #555; }
-#searchBox.dark { background:#222; color:#fff; }
-.asset-row.dark { border-color: #444; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f0f0f0;
+  }
+  .overlay {
+    background-color: rgba(255,255,255,0.95);
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  h2 {
+    text-align: center;
+    margin-top: 0;
+  }
+  .search-box {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+    justify-content: center;
+  }
+  #searchBox {
+    padding: 8px;
+    font-size: 16px;
+    width: 220px;
+    box-sizing: border-box;
+  }
+  button {
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .static-text {
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #333;
+  }
+  footer {
+    font-size: 14px;
+    color: darkred;
+    font-weight: bold;
+    animation: marquee 15s linear infinite;
+    white-space: nowrap;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+  @keyframes marquee {
+    0% { text-indent: 100%; }
+    100% { text-indent: -100%; }
+  }
+  .result {
+    font-size: 15px;
+    background: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .asset-row {
+    display: grid;
+    grid-template-columns: 160px 10px 1fr;
+    line-height: 1.3;
+    padding: 2px 0;
+  }
+  .asset-label, .asset-colon, .asset-data {
+    margin: 0;
+    padding: 0;
+  }
+  .asset-data.keterangan {
+    grid-column: 1 / 4;
+    margin-top: 2px;
+    white-space: pre-wrap;
+  }
 </style>
 </head>
 <body>
-
-<h2>Cek Data Aset</h2>
-<div style="margin-top:20px;">
-  <input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" style="width:220px;" />
-  <button id="searchButton">🔍</button>
-  <datalist id="assetList"></datalist>
+<div class="overlay">
+  <h2>Cek Data Aset</h2>
+  <div class="search-box">
+    <input type="text" id="searchBox" placeholder="Masukkan kode aset...">
+    <button onclick="searchAsset()">🔍</button>
+  </div>
+  <div class="static-text">Tekan Enter atau tombol 🔍 untuk mencari.</div>
+  <footer id="runningText">Running text berjalan di sini...</footer>
+  <div id="result" class="result"></div>
 </div>
-<div class="hint">Tekan Enter atau tombol 🔍 untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
-
-<div id="output">Silakan ketik Nomor Aset…</div>
-
-<!-- Tombol tema -->
-<button id="themeToggle">Tema Gelap</button>
-
 <script>
-// ====== ASET ======
-const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
+const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
 let assets = [];
-const searchBox = document.getElementById("searchBox");
 
-function parseCSV(text){
-  const lines = text.split(/\r?\n/);
-  return lines.map(line=>{
-    const cells=[]; let cur="", inQuotes=false;
-    for(let i=0;i<line.length;i++){
-      const ch=line[i];
-      if(ch=='"'){ if(inQuotes && line[i+1]=='"'){cur+='"';i++;} else{inQuotes=!inQuotes;} }
-      else if(ch==',' && !inQuotes){ cells.push(cur); cur=""; }
-      else{ cur+=ch; }
-    }
-    cells.push(cur);
-    return cells.map(c=>c.replace(/^"|"$/g,""));
-  });
-}
-
-async function loadSheet(){
-  const res = await fetch(sheetUrl);
-  const text = await res.text();
-  const rows = parseCSV(text);
-  assets = rows.map(r=>({
-    kode:(r[4]||"").trim(),
-    deskripsi:r[5]||"",
-    kapitalisasi:r[6]||"",
-    nilai:r[19]||"",
-    opname:r[10]||r[9]||"",
-    lokasi:r[13]||"",
-    detail:r[14]||"",
-    kondisi:r[15]||"",
-    catatan:(r[16]&&r[16].trim())?r[16]:(r[21]||"")
-  })).filter(a=>a.kode);
-
-  const dataList = document.getElementById("assetList");
-  dataList.innerHTML="";
-  assets.map(a=>a.kode).sort((a,b)=>a.localeCompare(b)).slice(0,5000).forEach(k=>{
-    const opt=document.createElement("option"); opt.value=k; dataList.appendChild(opt);
-  });
-}
-loadSheet().catch(err=>{ document.getElementById("output").innerHTML="Gagal memuat data: "+err; });
-
-function formatAsset(a){
-  let nilaiText=(a.nilai||"").trim();
-  if(!nilaiText) nilaiText="Rp. -";
-  else if(!nilaiText.startsWith("Rp.")) nilaiText="Rp. "+nilaiText;
-
-  const rows=[
-    ["Nomor Aset", a.kode],
-    ["Deskripsi", a.deskripsi],
-    ["Kapitalisasi", a.kapitalisasi],
-    ["Nilai Perolehan", nilaiText],
-    ["Lokasi", a.lokasi],
-    ["Detail Lokasi", a.detail],
-    ["Opname Terakhir", a.opname],
-    ["Kondisi", a.kondisi],
-    ["Catatan", a.catatan]
-  ];
-
-  return rows.map(([label,val])=>`
-    <div class="asset-row">
-      <div class="asset-label">${label}</div>
-      <div class="asset-sep">:</div>
-      <div class="asset-value">${val||""}</div>
-    </div>
-  `).join("");
-}
-
-function searchAsset(){
-  const out=document.getElementById("output");
-  let kode=searchBox.value.trim();
-  if(!kode){ out.innerHTML="Masukkan Nomor Aset terlebih dahulu."; return; }
-  if(/^\d{8}$/.test(kode)) kode+="-0";
-  else if(/^\d{8}-$/.test(kode)) kode+="0";
-
-  const found=assets.find(a=>a.kode===kode);
-  out.innerHTML=found?formatAsset(found):"Data tidak ditemukan.";
-}
-
-searchBox.addEventListener("keydown",e=>{ if(e.key==="Enter") searchAsset(); });
-searchBox.addEventListener("focus",function(){ setTimeout(()=>{this.select();},0); });
-document.getElementById("searchButton").addEventListener("click", searchAsset);
-
-// ====== Toggle Tema ======
-const themeToggle=document.getElementById("themeToggle");
-function setTheme(theme){
-  document.body.className=theme;
-  document.getElementById("output").className=theme;
-  document.getElementById("searchBox").className=theme;
-
-  // ganti border row juga
-  document.querySelectorAll(".asset-row").forEach(r=>{
-    if(theme==='dark') r.style.borderColor="#444";
-    else r.style.borderColor="#ddd";
+fetch(csvUrl)
+  .then(res => res.text())
+  .then(text => {
+    const rows = text.split(/\r?\n/).map(r => r.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/));
+    rows.shift(); // header
+    assets = rows.map(r => ({
+      kode: r[4]?.trim(),
+      deskripsi: r[5] || "",
+      kapitalisasi: r[6] || "",
+      nilai: r[19] || "",
+      opname: r[10] || r[9] || "",
+      lokasi: r[13] || "",
+      detail: r[14] || "",
+      kondisi: r[15] || "",
+      keterangan: r[16] || r[21] || ""
+    }));
+    document.getElementById("runningText").textContent = rows[0]?.[17] || "";
   });
 
-  themeToggle.textContent=theme==='light'?'Tema Gelap':'Tema Terang';
+const input = document.getElementById('searchBox');
+
+input.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') searchAsset();
+});
+
+function searchAsset() {
+  let kode = input.value.trim();
+  if (kode.length === 8 && !kode.includes("-")) kode = kode + "-0";
+  const asset = assets.find(a => a.kode === kode);
+  if (!asset) {
+    document.getElementById('result').textContent = "Data tidak ditemukan.";
+    return;
+  }
+  document.getElementById('result').innerHTML = `
+    <div class="asset-row"><div class="asset-label">Nomor Aset</div><div class="asset-colon">:</div><div class="asset-data">${asset.kode}</div></div>
+    <div class="asset-row"><div class="asset-label">Deskripsi</div><div class="asset-colon">:</div><div class="asset-data">${asset.deskripsi}</div></div>
+    <div class="asset-row"><div class="asset-label">Kapitalisasi</div><div class="asset-colon">:</div><div class="asset-data">${asset.kapitalisasi}</div></div>
+    <div class="asset-row"><div class="asset-label">Nilai Perolehan</div><div class="asset-colon">:</div><div class="asset-data">Rp. ${asset.nilai}</div></div>
+    <div class="asset-row"><div class="asset-label">Lokasi</div><div class="asset-colon">:</div><div class="asset-data">${asset.lokasi}</div></div>
+    <div class="asset-row"><div class="asset-label">Detail Lokasi</div><div class="asset-colon">:</div><div class="asset-data">${asset.detail}</div></div>
+    <div class="asset-row"><div class="asset-label">Opname Terakhir</div><div class="asset-colon">:</div><div class="asset-data">${asset.opname}</div></div>
+    <div class="asset-row"><div class="asset-label">Kondisi</div><div class="asset-colon">:</div><div class="asset-data">${asset.kondisi}</div></div>
+    <div class="asset-row"><div class="asset-data keterangan">${asset.keterangan}</div></div>
+  `;
 }
-setTheme('light');
-themeToggle.addEventListener("click",()=>{ const current=document.body.className; setTheme(current==='light'?'dark':'light'); });
 </script>
-
 </body>
 </html>
