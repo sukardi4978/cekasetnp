@@ -4,108 +4,65 @@
 <meta charset="UTF-8" />
 <title>Cek Aset Non Produksi PT INKA</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto+Mono&display=swap" rel="stylesheet">
-
 <style>
-body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial, sans-serif; transition: background 0.3s, color 0.3s; }
-#searchBox { padding: 8px; font-size: 16px; font-family: 'Roboto Condensed', Arial, sans-serif; vertical-align: middle; transition: all 0.2s ease; }
-#searchBox:focus { border: 2px solid #1a73e8; box-shadow: 0 0 6px rgba(26,115,232,0.4); outline: none; }
-#searchButton { font-size: 16px; padding: 8px 12px; vertical-align: middle; cursor: pointer; }
-
-#output { margin-top: 60px; text-align: left; display: inline-block; padding: 12px; border-radius:6px; transition: background 0.3s, color 0.3s, border 0.3s; }
-#output pre { margin: 0; font-size: 16px; line-height: 1.2; font-family: 'Roboto Mono', monospace; white-space: pre-wrap; }
-
-.hint { font-size: 12px; color: #666; margin-top: 6px; }
-
-/* Tombol tema di bawah kotak, center */
-#themeToggle {
-  display: block;          
-  margin: 10px auto 0 auto; 
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-/* Tema Light */
-body.light { 
-  background: url('kereta-watermark.png') center top no-repeat; 
-  background-size: contain; 
-  background-color: #f8fbff; 
-  color: #222; 
-}
-#output.light { 
-  background: #f8fbff; 
-  color:#222; 
-  border: 1px solid #ccc; 
-}
+body { margin:0; padding-top:50px; font-family:'Roboto Condensed',Arial,sans-serif; transition:background 0.3s,color 0.3s; }
+.container { max-width:600px; margin:0 auto; text-align:center; }
+#searchBox { padding:8px; font-size:16px; font-family:'Roboto Condensed',Arial,sans-serif; vertical-align:middle; transition: all 0.2s ease; }
+#searchBox:focus { border:2px solid #1a73e8; box-shadow:0 0 6px rgba(26,115,232,0.4); outline:none; }
+#searchButton { font-size:16px; padding:8px 12px; vertical-align:middle; cursor:pointer; }
+#output { margin-top:10px; text-align:left; display:inline-block; padding:12px; border-radius:6px; transition:background 0.3s,color 0.3s,border 0.3s; width:100%; max-width:500px; }
+#output pre { margin:0; font-size:16px; line-height:1.2; font-family:'Roboto Mono',monospace; white-space:pre-wrap; }
+#topMessage { margin-bottom:5px; font-weight:400; font-size:16px; font-family:'Roboto Mono',monospace; text-align:left; white-space:pre-wrap; display:block; width:100%; max-width:500px; margin-left:auto; margin-right:auto; color:inherit; }
+.hint { font-size:12px; color:#666; margin-top:6px; }
+#themeToggle { display:block; margin:10px auto 0 auto; padding:6px 12px; cursor:pointer; }
+#marqueeFloating { position:fixed; top:0; left:0; width:100%; height:30px; line-height:30px; overflow:hidden; white-space:nowrap; pointer-events:none; font-weight:500; font-size:16px; z-index:9999; background:rgba(255,255,255,0.3); color:#1a73e8; text-align:center; }
+#marqueeFloating span { display:inline-block; white-space:nowrap; transform:translateX(0); }
+body.light { background:url('kereta-watermark.png') center top no-repeat; background-size:contain; background-color:#f8fbff; color:#222; }
+#output.light { background:#f8fbff; color:#222; border:1px solid #ccc; }
 #searchBox.light { background:#fff; color:#000; }
-
-/* Tema Dark */
-body.dark { 
-  background: #121212 url('kereta-watermark.png') center top no-repeat; 
-  background-size: contain; 
-  color: #eee; 
-}
-#output.dark { 
-  background: #121212; 
-  color:#eee; 
-  border: 1px solid #555; 
-}
+#topMessage.light { color:inherit; }
+body.dark { background:#121212 url('kereta-watermark.png') center top no-repeat; background-size:contain; color:#eee; }
+#output.dark { background:#121212; color:#eee; border:1px solid #555; }
 #searchBox.dark { background:#222; color:#fff; }
-
-/* Floating Running Text */
-#marqueeFloating {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  pointer-events: none;
-  font-family: 'Roboto Condensed', Arial, sans-serif;
-  font-weight: 500;
-  z-index: 9999;
-  padding: 6px 0;
-  font-size: 16px;
-}
-body.light #marqueeFloating { background: rgba(255,255,255,0.3); color: #1a73e8; }
-body.dark #marqueeFloating { background: rgba(0,0,0,0.3); color: #1a73e8; }
+#topMessage.dark { color:inherit; }
+body.dark #marqueeFloating { background:rgba(0,0,0,0.3); color:#1a73e8; }
 </style>
 </head>
-<body>
+<body class="light">
 
-<!-- Floating Running Text -->
-<div id="marqueeFloating"><span id="marqueeFloatingText">Memuat info...</span></div>
+<div id="marqueeFloating"><span id="marqueeFloatingText">Memuat Info…</span></div>
 
-<h2>Cek Data Aset</h2>
-<div style="margin-top:20px;">
-  <input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" style="width:220px;" />
-  <button id="searchButton">🔍</button>
-  <datalist id="assetList"></datalist>
+<div class="container">
+  <h2>Cek Data Aset</h2>
+
+  <div style="margin-top:20px;">
+    <input type="text" id="searchBox" placeholder="Masukkan Nomor Aset..." list="assetList" autocomplete="off" style="width:220px;" />
+    <button id="searchButton">🔍</button>
+    <datalist id="assetList"></datalist>
+  </div>
+  <div class="hint">Tekan Enter atau tombol 🔍 untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
+
+  <!-- Tulisan diam, rata kiri -->
+  <div id="topMessage">Memuat Info…</div>
+
+  <div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
+
+  <button id="themeToggle">Tema Gelap</button>
 </div>
-<div class="hint">Tekan Enter atau tombol 🔍 untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
-
-<div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
-
-<!-- Tombol tema di bawah kotak output -->
-<button id="themeToggle">Tema Gelap</button>
 
 <script>
-// ====== ASET ======
-const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
-let assets = [];
-const searchBox = document.getElementById("searchBox");
+const sheetUrl="https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
+let assets=[]; const searchBox=document.getElementById("searchBox");
 
 function parseCSV(text){
-  const lines = text.split(/\r?\n/);
+  const lines=text.split(/\r?\n/);
   return lines.map(line=>{
     const cells=[]; let cur="", inQuotes=false;
     for(let i=0;i<line.length;i++){
       const ch=line[i];
-      if(ch=='"'){ if(inQuotes && line[i+1]=='"'){cur+='"';i++;} else{inQuotes=!inQuotes;} }
-      else if(ch==',' && !inQuotes){ cells.push(cur); cur=""; }
-      else{ cur+=ch; }
+      if(ch=='"'){ if(inQuotes && line[i+1]=='"'){cur+='"'; i++;} else{inQuotes=!inQuotes;} }
+      else if(ch==',' && !inQuotes){ cells.push(cur); cur=""; } else{ cur+=ch; }
     }
     cells.push(cur);
     return cells.map(c=>c.replace(/^"|"$/g,""));
@@ -113,9 +70,10 @@ function parseCSV(text){
 }
 
 async function loadSheet(){
-  const res = await fetch(sheetUrl);
-  const text = await res.text();
-  const rows = parseCSV(text);
+  const res=await fetch(sheetUrl);
+  const text=await res.text();
+  const rows=parseCSV(text);
+
   assets = rows.map(r=>({
     kode:(r[4]||"").trim(),
     deskripsi:r[5]||"",
@@ -128,14 +86,20 @@ async function loadSheet(){
     catatan:(r[16]&&r[16].trim())?r[16]:(r[21]||"")
   })).filter(a=>a.kode);
 
-  const dataList = document.getElementById("assetList");
-  dataList.innerHTML="";
+  const dataList=document.getElementById("assetList"); dataList.innerHTML="";
   assets.map(a=>a.kode).sort((a,b)=>a.localeCompare(b)).slice(0,5000).forEach(k=>{
     const opt=document.createElement("option"); opt.value=k; dataList.appendChild(opt);
   });
+
+  // Ambil data: Running Text R2, Tulisan diam R1
+  const r1Row = rows[0] || [];
+  const r2Row = rows[1] || [];
+  document.getElementById("marqueeFloatingText").textContent = r2Row[17] || "Info Aset PT INKA…";
+  document.getElementById("topMessage").textContent = r1Row[17] || "Info Aset PT INKA…";
 }
 loadSheet().catch(err=>{ document.querySelector("#output pre").textContent="Gagal memuat data: "+err; });
 
+// Format & Pencarian
 function formatAsset(a){
   let nilaiText=(a.nilai||"").trim();
   if(!nilaiText) nilaiText="Rp. -";
@@ -171,38 +135,27 @@ searchBox.addEventListener("keydown",e=>{ if(e.key==="Enter") searchAsset(); });
 searchBox.addEventListener("focus",function(){ setTimeout(()=>{this.select();},0); });
 document.getElementById("searchButton").addEventListener("click", searchAsset);
 
-// ====== Floating RUNNING TEXT dari Sheet5 R1 ======
-const sheet5Url="https://docs.google.com/spreadsheets/d/e/.../pub?gid=XXXXX&single=true&output=csv"; // Ganti sesuai Sheet5
-async function loadMarqueeFloating(){
-  try{
-    const res = await fetch(sheet5Url);
-    const text = await res.text();
-    const rows = text.split(/\r?\n/).map(r=>r.split(','));
-    const r1 = rows[0][17] || "Memuat info...";
-    const textEl = document.getElementById("marqueeFloatingText");
-    textEl.textContent = r1;
-
-    let offset = window.innerWidth;
-    function runMarquee(){
-      offset -= 1;
-      textEl.style.transform = `translateX(${offset}px)`;
-      if(Math.abs(offset) > textEl.offsetWidth) offset = window.innerWidth;
-      requestAnimationFrame(runMarquee);
-    }
-    runMarquee();
-  } catch(err){
-    document.getElementById("marqueeFloatingText").textContent = "Gagal memuat info.";
+// Running Text marquee
+const textEl=document.getElementById("marqueeFloatingText"); textEl.style.display="inline-block";
+window.addEventListener("load",()=>{
+  let offset=10; 
+  function runMarquee(){
+    offset-=1;
+    textEl.style.transform=`translateX(${offset}px)`;
+    if(Math.abs(offset)>textEl.offsetWidth + window.innerWidth) offset=window.innerWidth;
+    requestAnimationFrame(runMarquee);
   }
-}
-loadMarqueeFloating();
+  runMarquee();
+});
 
-// ====== Toggle Tema ======
+// Toggle Tema
 const themeToggle=document.getElementById("themeToggle");
 function setTheme(theme){
   document.body.className=theme;
   document.getElementById("output").className=theme;
   document.getElementById("searchBox").className=theme;
-  themeToggle.textContent=theme==='light'?'Tema Gelap':'Tema Terang';
+  document.getElementById("topMessage").className=theme;
+  themeToggle.textContent = theme==='light'?'Tema Gelap':'Tema Terang';
 }
 setTheme('light');
 themeToggle.addEventListener("click",()=>{ const current=document.body.className; setTheme(current==='light'?'dark':'light'); });
