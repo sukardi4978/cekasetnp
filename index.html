@@ -1,214 +1,415 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Info Aset PT INKA</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      background-color: #f9f9f9;
-    }
-    .container {
-      width: 90%;
-      max-width: 1000px;
-      text-align: center;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cek Aset — otomatis dari Google Sheet</title>
+<style>
+  :root{
+    --container-max:1000px;
+    --marquee-height:34px;
+    --gap:12px;
+  }
+  body{
+    margin:0;
+    padding:20px;
+    font-family: "Roboto Condensed", "Arial", sans-serif;
+    background:#f4f6f8;
+    display:flex;
+    justify-content:center;
+  }
 
-    /* Running text */
-    .marquee-container {
-      overflow: hidden;
-      white-space: nowrap;
-      box-sizing: border-box;
-      margin: 10px 0;
-    }
-    .marquee-text {
-      display: inline-block;
-      padding-left: 100%;
-      animation: marquee 15s linear infinite;
-      color: blue;
-      font-weight: bold;
-    }
-    @keyframes marquee {
-      from { transform: translateX(0); }
-      to { transform: translateX(-100%); }
-    }
+  .container{
+    width:90%;
+    max-width:var(--container-max);
+    background:#fff;
+    border-radius:10px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    box-sizing:border-box;
+  }
 
-    /* Tulisan diam */
-    .static-info {
-      text-align: left;
-      font-weight: bold;
-      margin: 10px 0;
-    }
+  /* running text (marquee) */
+  .running-wrapper{
+    height:var(--marquee-height);
+    overflow:hidden;
+    position:relative;
+    margin-bottom:10px;
+    border-bottom:1px solid #e6e9ee;
+    display:flex;
+    align-items:center;
+  }
+  .running {
+    display:inline-block;
+    white-space:nowrap;
+    font-weight:600;
+    font-size:15px;
+    color:#0a58ca;
+    /* animation duration will be set dynamically in JS to adapt to text length */
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
 
-    /* Tabel hasil pencarian */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
-      background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #007BFF;
-      color: white;
-    }
+  /* keyframes produce movement then small pause at end */
+  @keyframes marquee-loop {
+    0%   { transform: translateX(100%); }
+    70%  { transform: translateX(-100%); } /* move */
+    85%  { transform: translateX(-100%); } /* small pause */
+    100% { transform: translateX(100%); }  /* jump (next iteration starts) */
+  }
 
-    /* Input & tombol */
-    .search-bar {
-      display: flex;
-      justify-content: center;
-      margin: 15px 0;
-    }
-    .search-bar input {
-      padding: 8px;
-      width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 4px 0 0 4px;
-      outline: none;
-    }
-    .search-bar button {
-      padding: 8px 12px;
-      border: 1px solid #007BFF;
-      background: #007BFF;
-      color: white;
-      border-radius: 0 4px 4px 0;
-      cursor: pointer;
-    }
-    .search-bar button:hover {
-      background: #0056b3;
-    }
+  /* static line (R1) - left aligned but constrained inside container */
+  .static-line {
+    text-align:left;
+    font-family: "Roboto Mono", monospace;
+    font-size:15px;
+    color:#222;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    /* padding-left will be set dynamically to match Nomor Aset column */
+  }
 
-    /* Tombol tema */
-    .theme-toggle {
-      margin-top: 20px;
-      padding: 8px 12px;
-      background: #333;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .theme-toggle:hover {
-      background: #555;
-    }
+  /* search area (keperluan tetap ada) */
+  .search-row {
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin:10px 0;
+  }
+  input[type="text"].search {
+    width:240px;
+    padding:8px 10px;
+    font-size:15px;
+    border-radius:6px 0 0 6px;
+    border:1px solid #cfd6df;
+    outline:none;
+  }
+  button.search-btn{
+    padding:8px 12px;
+    border-radius:0 6px 6px 0;
+    border:1px solid #0a58ca;
+    background:#0a58ca;
+    color:#fff;
+    cursor:pointer;
+  }
 
-    /* Dark mode */
-    .dark-mode {
-      background-color: #222;
-      color: #f9f9f9;
-    }
-    .dark-mode table {
-      background: #333;
-      color: white;
-    }
-    .dark-mode th {
-      background-color: #444;
-    }
-  </style>
+  /* main table styles - tetap prioritas */
+  table.assets {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+    background:transparent;
+  }
+  table.assets th, table.assets td{
+    border:1px solid #e6e9ee;
+    padding:8px 10px;
+    text-align:left;
+    font-size:14px;
+  }
+  table.assets th{
+    background:#0a58ca;
+    color:#fff;
+    font-weight:600;
+  }
+
+  /* make sure static text aligns with table content area */
+  .table-wrapper{
+    width:100%;
+    overflow:auto;
+  }
+
+  /* responsive tweaks */
+  @media (max-width:600px){
+    .container{ padding:12px; }
+    input[type="text"].search{ width:160px; }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <!-- Running Text -->
-    <div class="marquee-container">
-      <span class="marquee-text" id="runningText">Memuat info...</span>
+  <div class="container" id="app">
+    <!-- Running text (from R2) -->
+    <div class="running-wrapper" aria-hidden="false">
+      <div id="marquee" class="running" role="marquee">Memuat running text...</div>
     </div>
 
-    <!-- Tulisan Diam -->
-    <div class="static-info" id="staticInfo">Memuat info...</div>
+    <!-- Static text (from R1) aligned to first table column -->
+    <div id="staticText" class="static-line">Memuat info diam...</div>
 
-    <!-- Kotak Input -->
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Cari aset...">
-      <button onclick="searchData()">🔍</button>
+    <!-- Search area -->
+    <div class="search-row">
+      <input id="searchBox" class="search" type="text" placeholder="Masukkan Nomor Aset..." />
+      <button class="search-btn" id="searchBtn">🔍</button>
     </div>
 
-    <!-- Hasil Pencarian -->
-    <table>
-      <thead>
-        <tr>
-          <th>Nomor Aset</th>
-          <th>Deskripsi</th>
-          <th>Lokasi</th>
-          <th>Kondisi</th>
-        </tr>
-      </thead>
-      <tbody id="resultTable">
-        <tr><td colspan="4" style="text-align:center;">Belum ada data</td></tr>
-      </tbody>
-    </table>
-
-    <!-- Tombol Ganti Tema -->
-    <button class="theme-toggle" onclick="toggleTheme()">Ganti Tema</button>
+    <!-- Table wrapper and table (main data) -->
+    <div class="table-wrapper">
+      <table class="assets" id="assetsTable" aria-live="polite">
+        <thead>
+          <tr>
+            <th data-col="kode">Nomor Aset</th>
+            <th data-col="deskripsi">Deskripsi</th>
+            <th data-col="lokasi">Lokasi</th>
+            <th data-col="kondisi">Kondisi</th>
+            <th data-col="nilai">Nilai Perolehan</th>
+          </tr>
+        </thead>
+        <tbody id="assetsBody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:#666;">Memuat data…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <script>
-    // Ambil data dari "sumber" (simulasi dari spreadsheet)
-    const sumberData = {
-      R1: "Info Diam dari Sel R1 - Judul Aset",
-      R2: "Info Berjalan dari Sel R2 - Running Text berjalan terus menerus..."
-    };
+<script>
+/*
+  Final file:
+  - Ambil CSV publik Google Sheets (sheetUrl).
+  - Parse CSV robustly.
+  - Ambil R1 (rows[0]) => staticText
+         R2 (rows[1]) => running marquee
+    If those rows are empty, fallback to first non-empty row for each in order.
+  - Isi table dengan data (mapping kolom sesuai struktur CSV used earlier).
+  - Adjust staticText padding-left so it lines up with left edge of first data column.
+  - Running marquee duration set dynamically based on text length (so feel smooth).
+  - Running marquee CSS uses keyframes 'marquee-loop' for small pause.
+*/
 
-    // Set Running Text (dari R2)
-    document.getElementById("runningText").innerText = sumberData.R2;
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTafvAiaKbaQt2RIboLf9nY6v8mltXLhSN4R-l-LZGFmic1p0-83knr-g-bFEoPDB8Rl2T661YdYFTj/pub?gid=1753334008&single=true&output=csv";
 
-    // Set Tulisan Diam (dari R1)
-    document.getElementById("staticInfo").innerText = sumberData.R1;
+const marqueeEl = document.getElementById("marquee");
+const staticEl  = document.getElementById("staticText");
+const assetsBody = document.getElementById("assetsBody");
+const searchBox  = document.getElementById("searchBox");
+const searchBtn  = document.getElementById("searchBtn");
+const app        = document.getElementById("app");
 
-    // Fungsi pencarian sederhana
-    function searchData() {
-      const keyword = document.getElementById("searchInput").value.toLowerCase();
-      const table = document.getElementById("resultTable");
-      table.innerHTML = "";
+// robust CSV parser (handles quoted commas and CRLF)
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter((l,i)=>!(l.trim()==="" && i===0)); // keep empties but drop leading blank line
+  const rows = [];
+  for(const line of lines){
+    const cells=[];
+    let cur="", inQuotes=false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(ch === '"'){
+        if(inQuotes && line[i+1] === '"'){ cur += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if(ch === ',' && !inQuotes){
+        cells.push(cur); cur = "";
+      } else cur += ch;
+    }
+    cells.push(cur);
+    // trim surrounding quotes
+    rows.push(cells.map(c => c.replace(/^"|"$/g, "")));
+  }
+  return rows;
+}
 
-      if (!keyword) {
-        table.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Masukkan kata kunci</td></tr>";
-        return;
-      }
+// helper: find first non-empty row in column index colIdx
+function findRowWithCol(rows, colIdx) {
+  for (let i=0;i<rows.length;i++){
+    const r = rows[i];
+    if(r && r[colIdx] && r[colIdx].toString().trim() !== "") return {row:r, index:i};
+  }
+  return null;
+}
 
-      // contoh data dummy
-      const data = [
-        { no: "A001", deskripsi: "Laptop Dell", lokasi: "Kantor", kondisi: "Baik" },
-        { no: "A002", deskripsi: "Printer HP", lokasi: "Gudang", kondisi: "Rusak" },
-        { no: "A003", deskripsi: "Proyektor Epson", lokasi: "Ruang Meeting", kondisi: "Baik" }
-      ];
+async function loadData(){
+  try {
+    const res = await fetch(sheetUrl, {cache: "no-store"});
+    if(!res.ok) throw new Error("Gagal mem-fetch sheet: " + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if(rows.length === 0){
+      assetsBody.innerHTML = "<tr><td colspan='5' style='text-align:center;padding:20px;color:#a00;'>Sheet kosong</td></tr>";
+      return;
+    }
 
-      const hasil = data.filter(item =>
-        item.no.toLowerCase().includes(keyword) ||
-        item.deskripsi.toLowerCase().includes(keyword) ||
-        item.lokasi.toLowerCase().includes(keyword) ||
-        item.kondisi.toLowerCase().includes(keyword)
-      );
+    // --- determine R1 (index 0) and R2 (index 1) robustly ---
+    // user wants: running text from R2, static text from R1
+    // we expect R-col in column index 17 (col 'R' -> zero-based 17) per earlier mapping,
+    // but if that column doesn't exist, we fallback to first non-empty cell in the row.
+    const RCOL = 17;
+    // prefer exact rows[0] and rows[1] if present; if empty, find first non-empty rows for each role
+    const r1Candidate = rows[0] || [];
+    const r2Candidate = rows[1] || [];
 
-      if (hasil.length === 0) {
-        table.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Data tidak ditemukan</td></tr>";
-      } else {
-        hasil.forEach(item => {
-          table.innerHTML += `
-            <tr>
-              <td>${item.no}</td>
-              <td>${item.deskripsi}</td>
-              <td>${item.lokasi}</td>
-              <td>${item.kondisi}</td>
-            </tr>`;
-        });
+    const r1Val = (r1Candidate[RCOL] && r1Candidate[RCOL].trim()) ? r1Candidate[RCOL].trim() : (r1Candidate.join(" ").trim() || "");
+    const r2Val = (r2Candidate[RCOL] && r2Candidate[RCOL].trim()) ? r2Candidate[RCOL].trim() : (r2Candidate.join(" ").trim() || "");
+
+    // fallback search if empty
+    let finalR1 = r1Val;
+    let finalR2 = r2Val;
+    if(!finalR1){
+      const found = findRowWithCol(rows, RCOL) || {row:[], index:-1}; // first row with colRCOL
+      if(found.index === 0) { // if first found is row0 and r1 empty then try next
+        // find next non-empty after index 0
+        for(let i=1;i<rows.length;i++){
+          if(rows[i][RCOL] && rows[i][RCOL].trim()!==""){ finalR1 = rows[i][RCOL].trim(); break; }
+        }
+      } else if(found.row && found.row[RCOL]) finalR1 = found.row[RCOL].trim();
+    }
+    if(!finalR2){
+      // pick next available (prefers row index 1 or next after chosen r1)
+      if(rows[1] && rows[1][RCOL] && rows[1][RCOL].trim()!=="") finalR2 = rows[1][RCOL].trim();
+      else {
+        for(let i=0;i<rows.length;i++){
+          if(rows[i][RCOL] && rows[i][RCOL].trim()!=="" && rows[i][RCOL].trim() !== finalR1){
+            finalR2 = rows[i][RCOL].trim(); break;
+          }
+        }
       }
     }
 
-    // Fungsi ganti tema
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
+    // final fallback
+    if(!finalR1) finalR1 = "Info Aset PT INKA (R1 kosong)";
+    if(!finalR2) finalR2 = "Info Aset PT INKA (R2 kosong)";
+
+    // set static and running (user requested running from R2, static from R1)
+    staticEl.textContent = finalR1;
+    marqueeEl.textContent = finalR2;
+
+    // --- build assets array from rows (mapping based on earlier mapping) ---
+    // earlier mapping in conversation:
+    // E(4)=kode, F(5)=deskripsi, G(6)=kapitalisasi, T(19)=nilai,
+    // K(10) or J(9)=opname, N(13)=lokasi, O(14)=detail, P(15)=kondisi,
+    // Q(16) or V(21)=catatan.
+    const assets = rows.map(r=>{
+      return {
+        kode: (r[4]||"").trim(),
+        deskripsi: r[5]||"",
+        kapitalisasi: r[6]||"",
+        nilai: r[19]||"",
+        opname: r[10] || r[9] || "",
+        lokasi: r[13]||"",
+        detail: r[14]||"",
+        kondisi: r[15]||"",
+        catatan: (r[16] && r[16].trim()) ? r[16] : (r[21]||"")
+      };
+    }).filter(a => a.kode); // only keep rows with kode
+
+    // populate table with some initial rows (do not hide data)
+    if(assets.length === 0){
+      assetsBody.innerHTML = "<tr><td colspan='5' style='text-align:center;padding:20px;color:#666;'>Tidak ada data aset</td></tr>";
+    } else {
+      renderAssetsTable(assets);
     }
-  </script>
+
+    // adjust staticText padding to match left of first data column ("Nomor Aset")
+    // compute offset of first <th> relative to container left padding
+    setTimeout(()=>alignStaticToFirstColumn(), 50);
+
+    // set marquee animation duration dynamically (based on text length)
+    setMarqueeTiming(finalR2);
+
+    // wire search using assets
+    searchBtn.onclick = () => performSearch(assets);
+    searchBox.onkeydown = (e) => { if(e.key === "Enter") performSearch(assets); };
+
+  } catch(err){
+    assetsBody.innerHTML = "<tr><td colspan='5' style='text-align:center;padding:20px;color:#a00;'>Error: "+ err.message +"</td></tr>";
+    marqueeEl.textContent = "Gagal memuat running text";
+    staticEl.textContent = "Gagal memuat info diam";
+    console.error(err);
+  }
+}
+
+// render table rows
+function renderAssetsTable(assets){
+  if(!assets || assets.length === 0){
+    assetsBody.innerHTML = "<tr><td colspan='5' style='text-align:center;padding:20px;color:#666;'>Tidak ada data</td></tr>";
+    return;
+  }
+  // show first 100 rows to keep UI responsive
+  const maxShow = Math.min(200, assets.length);
+  let html = "";
+  for(let i=0;i<maxShow;i++){
+    const a = assets[i];
+    const nilai = formatNilai(a.nilai);
+    html += `<tr>
+      <td>${escapeHtml(a.kode)}</td>
+      <td>${escapeHtml(a.deskripsi)}</td>
+      <td>${escapeHtml(a.lokasi)}</td>
+      <td>${escapeHtml(a.kondisi)}</td>
+      <td>${escapeHtml(nilai)}</td>
+    </tr>`;
+  }
+  assetsBody.innerHTML = html;
+}
+
+// format currency display: ensure "Rp." and fallback
+function formatNilai(v){
+  const t = (v||"").toString().trim();
+  if(!t) return "Rp. -";
+  if(/^Rp\.?/i.test(t)) return t.replace(/^Rp\.?\s*/i, "Rp. ");
+  // optionally insert thousand separators? keep raw to avoid guess; just add "Rp. "
+  return "Rp. " + t;
+}
+
+// align static text left edge with first table column "Nomor Aset"
+function alignStaticToFirstColumn(){
+  const table = document.querySelector("table.assets");
+  const firstTh = table ? table.querySelector("th[data-col='kode']") : null;
+  const containerRect = document.querySelector(".container").getBoundingClientRect();
+  if(firstTh && containerRect){
+    const thRect = firstTh.getBoundingClientRect();
+    const paddingLeft = thRect.left - containerRect.left;
+    // add a small correction (2px) for nicer alignment
+    staticEl.style.paddingLeft = Math.max(0, Math.round(paddingLeft) + 2) + "px";
+  } else {
+    // fallback small indent
+    staticEl.style.paddingLeft = "8px";
+  }
+}
+
+// dynamic marquee timing: set animation duration based on text length, with min and max
+function setMarqueeTiming(text){
+  const len = (text||"").length;
+  // baseSeconds roughly proportional to text length: longer text -> longer duration
+  const base = Math.max(8, Math.min(40, Math.round(len * 0.5)));
+  // apply CSS animation using keyframes marquee-loop
+  marqueeEl.style.animationName = "marquee-loop";
+  marqueeEl.style.animationDuration = base + "s";
+  marqueeEl.style.animationTimingFunction = "linear";
+}
+
+// search function (by kode or deskripsi)
+function performSearch(assets){
+  const q = (searchBox.value || "").trim().toLowerCase();
+  if(!q){
+    renderAssetsTable(assets); // restore default
+    return;
+  }
+  const filtered = assets.filter(a =>
+    (a.kode || "").toLowerCase().includes(q) ||
+    (a.deskripsi || "").toLowerCase().includes(q) ||
+    (a.lokasi || "").toLowerCase().includes(q) ||
+    (a.kondisi || "").toLowerCase().includes(q)
+  );
+  if(filtered.length === 0){
+    assetsBody.innerHTML = "<tr><td colspan='5' style='text-align:center;padding:18px;color:#666;'>Data tidak ditemukan</td></tr>";
+  } else {
+    renderAssetsTable(filtered);
+    // if exact kode match, scroll to top of table
+    const exact = filtered.find(f => (f.kode||"").toLowerCase() === q);
+    if(exact) window.scrollTo({ top: document.querySelector(".container").offsetTop - 20, behavior: "smooth" });
+  }
+}
+
+// small escape to prevent HTML injection from sheet values
+function escapeHtml(str){
+  if(!str) return "";
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+// kick off
+loadData();
+
+// re-align on resize (table layout may change)
+window.addEventListener("resize", () => {
+  setTimeout(alignStaticToFirstColumn, 120);
+});
+</script>
 </body>
 </html>
