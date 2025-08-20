@@ -14,12 +14,31 @@ body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial,
 #searchBox:focus { border: 2px solid #1a73e8; box-shadow: 0 0 6px rgba(26,115,232,0.4); outline: none; }
 #searchButton { font-size: 16px; padding: 8px 12px; vertical-align: middle; cursor: pointer; }
 
-#output { margin-top: 60px; text-align: left; display: inline-block; padding: 12px; border-radius:6px; transition: background 0.3s, color 0.3s, border 0.3s; }
-#output pre { margin: 0; font-size: 16px; line-height: 1.2; font-family: 'Roboto Mono', monospace; white-space: pre-wrap; }
-
+#output { 
+  margin-top: 60px; 
+  text-align: left; 
+  display: inline-block; 
+  padding: 12px; 
+  border-radius:6px; 
+  transition: background 0.3s, color 0.3s, border 0.3s; 
+  max-width: 95%;
+}
 .hint { font-size: 12px; color: #666; margin-top: 6px; }
 
-/* Tombol tema di bawah kotak, center */
+/* Struktur hasil dengan grid */
+.asset-row {
+  display: grid;
+  grid-template-columns: 140px 10px 1fr; /* label tetap, titik dua, isi fleksibel */
+  padding: 6px 0;              /* lebih lega */
+  border-bottom: 1px solid #ddd;
+}
+.asset-row:last-child { border-bottom: none; }
+
+.asset-label { font-weight: 500; text-align: left; }
+.asset-sep { text-align: center; }
+.asset-value { word-wrap: break-word; white-space: pre-wrap; }
+
+/* Tombol tema */
 #themeToggle {
   display: block;          
   margin: 10px auto 0 auto; 
@@ -28,55 +47,18 @@ body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial,
 }
 
 /* Tema Light */
-body.light { 
-  background: url('kereta-watermark.png') center top no-repeat; 
-  background-size: contain; 
-  background-color: #f8fbff; 
-  color: #222; 
-}
-#output.light { 
-  background: #f8fbff; 
-  color:#222; 
-  border: 1px solid #ccc; 
-}
+body.light { background-color: #f8fbff; color: #222; }
+#output.light { background: #f8fbff; color:#222; border: 1px solid #ccc; }
 #searchBox.light { background:#fff; color:#000; }
 
 /* Tema Dark */
-body.dark { 
-  background: #121212 url('kereta-watermark.png') center top no-repeat; 
-  background-size: contain; 
-  color: #eee; 
-}
-#output.dark { 
-  background: #121212; 
-  color:#eee; 
-  border: 1px solid #555; 
-}
+body.dark { background: #121212; color: #eee; }
+#output.dark { background: #121212; color:#eee; border: 1px solid #555; }
 #searchBox.dark { background:#222; color:#fff; }
-
-/* Floating Running Text */
-#marqueeFloating {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  pointer-events: none;
-  font-family: 'Roboto Condensed', Arial, sans-serif;
-  font-weight: 500;
-  z-index: 9999;
-  padding: 6px 0;
-  font-size: 16px;
-}
-body.light #marqueeFloating { background: rgba(255,255,255,0.3); color: #1a73e8; }
-body.dark #marqueeFloating { background: rgba(0,0,0,0.3); color: #1a73e8; }
+.asset-row.dark { border-color: #444; }
 </style>
 </head>
 <body>
-
-<!-- Floating Running Text -->
-<div id="marqueeFloating"><span id="marqueeFloatingText">Memuat info...</span></div>
 
 <h2>Cek Data Aset</h2>
 <div style="margin-top:20px;">
@@ -86,9 +68,9 @@ body.dark #marqueeFloating { background: rgba(0,0,0,0.3); color: #1a73e8; }
 </div>
 <div class="hint">Tekan Enter atau tombol 🔍 untuk mencari. Jika kode 8 digit tanpa “-” atau 8 digit + "-", otomatis ditambah “-0”.</div>
 
-<div id="output"><pre>Silakan ketik Nomor Aset…</pre></div>
+<div id="output">Silakan ketik Nomor Aset…</div>
 
-<!-- Tombol tema di bawah kotak output -->
+<!-- Tombol tema -->
 <button id="themeToggle">Tema Gelap</button>
 
 <script>
@@ -134,7 +116,7 @@ async function loadSheet(){
     const opt=document.createElement("option"); opt.value=k; dataList.appendChild(opt);
   });
 }
-loadSheet().catch(err=>{ document.querySelector("#output pre").textContent="Gagal memuat data: "+err; });
+loadSheet().catch(err=>{ document.getElementById("output").innerHTML="Gagal memuat data: "+err; });
 
 function formatAsset(a){
   let nilaiText=(a.nilai||"").trim();
@@ -152,49 +134,30 @@ function formatAsset(a){
     ["Kondisi", a.kondisi],
     ["Catatan", a.catatan]
   ];
-  const maxLabelLen=Math.max(...rows.map(([label])=>label.length));
-  return rows.map(([label,val])=>label.padEnd(maxLabelLen," ")+" : "+(val??"")).join("\n");
+
+  return rows.map(([label,val])=>`
+    <div class="asset-row">
+      <div class="asset-label">${label}</div>
+      <div class="asset-sep">:</div>
+      <div class="asset-value">${val||""}</div>
+    </div>
+  `).join("");
 }
 
 function searchAsset(){
-  const pre=document.querySelector("#output pre");
+  const out=document.getElementById("output");
   let kode=searchBox.value.trim();
-  if(!kode){ pre.textContent="Masukkan Nomor Aset terlebih dahulu."; return; }
+  if(!kode){ out.innerHTML="Masukkan Nomor Aset terlebih dahulu."; return; }
   if(/^\d{8}$/.test(kode)) kode+="-0";
   else if(/^\d{8}-$/.test(kode)) kode+="0";
 
   const found=assets.find(a=>a.kode===kode);
-  pre.textContent=found?formatAsset(found):"Data tidak ditemukan.";
+  out.innerHTML=found?formatAsset(found):"Data tidak ditemukan.";
 }
 
 searchBox.addEventListener("keydown",e=>{ if(e.key==="Enter") searchAsset(); });
 searchBox.addEventListener("focus",function(){ setTimeout(()=>{this.select();},0); });
 document.getElementById("searchButton").addEventListener("click", searchAsset);
-
-// ====== Floating RUNNING TEXT dari Sheet5 R1 ======
-const sheet5Url="https://docs.google.com/spreadsheets/d/e/.../pub?gid=XXXXX&single=true&output=csv"; // Ganti sesuai Sheet5
-async function loadMarqueeFloating(){
-  try{
-    const res = await fetch(sheet5Url);
-    const text = await res.text();
-    const rows = text.split(/\r?\n/).map(r=>r.split(','));
-    const r1 = rows[0][17] || "Memuat info...";
-    const textEl = document.getElementById("marqueeFloatingText");
-    textEl.textContent = r1;
-
-    let offset = window.innerWidth;
-    function runMarquee(){
-      offset -= 1;
-      textEl.style.transform = `translateX(${offset}px)`;
-      if(Math.abs(offset) > textEl.offsetWidth) offset = window.innerWidth;
-      requestAnimationFrame(runMarquee);
-    }
-    runMarquee();
-  } catch(err){
-    document.getElementById("marqueeFloatingText").textContent = "Gagal memuat info.";
-  }
-}
-loadMarqueeFloating();
 
 // ====== Toggle Tema ======
 const themeToggle=document.getElementById("themeToggle");
@@ -202,6 +165,13 @@ function setTheme(theme){
   document.body.className=theme;
   document.getElementById("output").className=theme;
   document.getElementById("searchBox").className=theme;
+
+  // ganti border row juga
+  document.querySelectorAll(".asset-row").forEach(r=>{
+    if(theme==='dark') r.style.borderColor="#444";
+    else r.style.borderColor="#ddd";
+  });
+
   themeToggle.textContent=theme==='light'?'Tema Gelap':'Tema Terang';
 }
 setTheme('light');
