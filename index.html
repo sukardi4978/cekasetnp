@@ -25,30 +25,18 @@ body { margin: 20px; text-align: center; font-family: 'Roboto Condensed', Arial,
 }
 .hint { font-size: 12px; color: #666; margin-top: 6px; }
 
-/* Struktur hasil */
+/* Struktur hasil dengan grid */
 .asset-row {
-  display: table;
-  width: 100%;
-  margin-bottom: 4px;
+  display: grid;
+  grid-template-columns: 140px 10px 1fr; /* label tetap, titik dua, isi fleksibel */
+  padding: 6px 0;              /* lebih lega */
+  border-bottom: 1px solid #ddd;
 }
-.asset-label {
-  display: table-cell;
-  white-space: nowrap;
-  padding-right: 8px;
-  vertical-align: top;
-  font-weight: 500;
-}
-.asset-sep {
-  display: table-cell;
-  width: 1px;
-  padding-right: 8px;
-  vertical-align: top;
-}
-.asset-value {
-  display: table-cell;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-}
+.asset-row:last-child { border-bottom: none; }
+
+.asset-label { font-weight: 500; text-align: left; }
+.asset-sep { text-align: center; }
+.asset-value { word-wrap: break-word; white-space: pre-wrap; }
 
 /* Tombol tema */
 #themeToggle {
@@ -67,6 +55,7 @@ body.light { background-color: #f8fbff; color: #222; }
 body.dark { background: #121212; color: #eee; }
 #output.dark { background: #121212; color:#eee; border: 1px solid #555; }
 #searchBox.dark { background:#222; color:#fff; }
+.asset-row.dark { border-color: #444; }
 </style>
 </head>
 <body>
@@ -176,6 +165,13 @@ function setTheme(theme){
   document.body.className=theme;
   document.getElementById("output").className=theme;
   document.getElementById("searchBox").className=theme;
+
+  // ganti border row juga
+  document.querySelectorAll(".asset-row").forEach(r=>{
+    if(theme==='dark') r.style.borderColor="#444";
+    else r.style.borderColor="#ddd";
+  });
+
   themeToggle.textContent=theme==='light'?'Tema Gelap':'Tema Terang';
 }
 setTheme('light');
