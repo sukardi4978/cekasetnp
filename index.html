@@ -104,8 +104,7 @@ async function loadSheet(){
     const opt=document.createElement("option"); opt.value=k; dataList.appendChild(opt);
   });
 
-  // Ambil data untuk tulisan diam (R1 kolom R) dan running text (R2 kolom R)
-  // Catatan: Kolom A = index 0, B = 1, ..., Q = 16, R = 17
+  // Tulisan diam dari R1 kolom R, running text dari R2 kolom R
   const r1Row = rows[0] || [];
   const r2Row = rows[1] || [];
   document.getElementById("marqueeFloatingText").textContent = r2Row[17] || "Info Aset PT INKA…";
@@ -130,11 +129,11 @@ function formatAsset(a){
     ["Catatan", a.catatan]
   ];
 
-  let html = "<table style='border-collapse:collapse; width:100%; font-family:Roboto Mono,monospace; font-size:16px; line-height:1.3'>";
+  let html = "<table style='border-collapse:collapse; width:100%; font-family:Roboto Mono,monospace; font-size:16px; line-height:1.1'>";
   rows.forEach(([label,val])=>{
     html += `<tr>
-      <td style="white-space:nowrap; vertical-align:top; padding-right:6px;">${label}</td>
-      <td style="vertical-align:top; padding-left:12px; text-indent:-10px;">: ${val??""}</td>
+      <td style="white-space:nowrap; vertical-align:top; padding:2px 4px 2px 0;">${label}</td>
+      <td style="vertical-align:top; padding:2px 0 2px 6px; text-indent:-10px;">: ${val??""}</td>
     </tr>`;
   });
   html += "</table>";
